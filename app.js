@@ -3,6 +3,10 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { Sky } from 'three/addons/objects/Sky.js';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { N8AOPass } from './vendor/N8AO.js';
 import { T, ROOMS } from './i18n.js';
 
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
@@ -76,14 +80,14 @@ const M = {
   interior: new THREE.MeshStandardMaterial({ color: 0xf2f0eb, roughness: 0.92 }),
   ceiling: new THREE.MeshStandardMaterial({ color: 0xf6f5f2, roughness: 0.95 }),
   oak: new THREE.MeshStandardMaterial({ map: texOak, bumpMap: bumpOak, bumpScale: 1.2, roughness: 0.42, envMapIntensity: 0.7 }),
-  deck: new THREE.MeshStandardMaterial({ map: texDeck, roughness: 0.82 }),
-  paver: new THREE.MeshStandardMaterial({ map: texPaver, roughness: 0.9 }),
-  slab: new THREE.MeshStandardMaterial({ map: texSlab, roughness: 0.92 }),
-  stone: new THREE.MeshStandardMaterial({ map: texStone, roughness: 0.95 }),
+  deck: new THREE.MeshStandardMaterial({ map: texDeck, bumpMap: texDeck, bumpScale: 1.6, roughness: 0.82 }),
+  paver: new THREE.MeshStandardMaterial({ map: texPaver, bumpMap: texPaver, bumpScale: 1.4, roughness: 0.9 }),
+  slab: new THREE.MeshStandardMaterial({ map: texSlab, bumpMap: texSlab, bumpScale: 1.2, roughness: 0.92 }),
+  stone: new THREE.MeshStandardMaterial({ map: texStone, bumpMap: texStone, bumpScale: 2.0, roughness: 0.95 }),
   roof: new THREE.MeshStandardMaterial({ color: 0x5b5e61, roughness: 0.85 }),
   black: new THREE.MeshStandardMaterial({ color: 0x1c1c1e, roughness: 0.5, metalness: 0.3 }),
   panel: new THREE.MeshStandardMaterial({ map: texPanel, roughness: 0.25, metalness: 0.5 }),
-  woodV: new THREE.MeshStandardMaterial({ map: texWoodV, roughness: 0.75 }),
+  woodV: new THREE.MeshStandardMaterial({ map: texWoodV, bumpMap: texWoodV, bumpScale: 1.5, roughness: 0.75 }),
   fence: new THREE.MeshStandardMaterial({ color: 0x3a3c3e, roughness: 0.6, metalness: 0.4 }),
   mesh: new THREE.MeshStandardMaterial({ color: 0x3a3c3e, roughness: 0.7, transparent: true, opacity: 0.28, depthWrite: false }),
   glassBal: new THREE.MeshPhysicalMaterial({ color: 0xcfe3e6, roughness: 0.04, metalness: 0, transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide }),
@@ -145,7 +149,8 @@ for (const f of model.faces) {
   const grp = f.floor === 1 ? groups.ground : groups.up;
   const map = tex(`assets/f_${f.name}.jpg`); const am = tex(`assets/m_${f.name}.png`, false);
   am.minFilter = THREE.LinearFilter; am.generateMipmaps = false;
-  const outer = new THREE.MeshStandardMaterial({ map, alphaMap: am, alphaTest: 0.5, roughness: 0.62 });
+  const nm = tex(`assets/n_${f.name}.jpg`, false), rm = tex(`assets/r_${f.name}.jpg`, false);
+  const outer = new THREE.MeshStandardMaterial({ map, alphaMap: am, alphaTest: 0.5, roughness: 1.0, roughnessMap: rm, normalMap: nm, normalScale: new THREE.Vector2(1, 1), envMapIntensity: 0.9 });
   const ox = n[0] * 0.012, oy = n[1] * 0.012;
   const g = quad(P(u0 + ox, v0 + oy, f.z0), P(u1 + ox, v1 + oy, f.z0), P(u1 + ox, v1 + oy, f.z1), P(u0 + ox, v0 + oy, f.z1), nW);
   const mo = new THREE.Mesh(g, outer); mo.castShadow = mo.receiveShadow = true; grp.add(mo);
@@ -160,7 +165,7 @@ for (const f of model.faces) {
   if (f.glass) {
     const gm = tex(`assets/g_${f.name}.png`, false); gm.minFilter = THREE.LinearFilter; gm.generateMipmaps = false;
     const gu0 = u0 - n[0] * 0.16, gv0 = v0 - n[1] * 0.16, gu1 = u1 - n[0] * 0.16, gv1 = v1 - n[1] * 0.16;
-    const gl = new THREE.MeshPhysicalMaterial({ color: 0xa9bcc2, roughness: 0.02, metalness: 0.05, transparent: true, opacity: 0.2, alphaMap: gm, depthWrite: false, side: THREE.DoubleSide, envMapIntensity: 1.6 });
+    const gl = new THREE.MeshPhysicalMaterial({ color: 0xa9bcc2, roughness: 0.02, metalness: 0.05, transparent: true, opacity: 0.2, alphaMap: gm, depthWrite: false, side: THREE.DoubleSide, envMapIntensity: 0.55 });
     const gg = quad(P(gu0, gv0, f.z0), P(gu1, gv1, f.z0), P(gu1, gv1, f.z1), P(gu0, gv0, f.z1), nW);
     const mg = new THREE.Mesh(gg, gl); mg.renderOrder = 2; grp.add(mg);
   }
@@ -329,40 +334,56 @@ const env = await (await fetch('assets/env.json')).json();
   const water = new THREE.Mesh(wg, wm); water.position.set(fm.E0 + fm.S / 2 - model.frame.E0, -0.24, -((fm.N0 - fm.S / 2) - model.frame.N0)); water.renderOrder = 1; water.receiveShadow = true; scene.add(water);
   let tt = 0; window.__water = dt => { tt += dt; nt.offset.set(tt * 0.012, tt * 0.007); };
 }
-{ // trees from the national canopy-height model (nDSM, 1 m) — positions and heights are real
-  const dec = [], con = [];
-  for (const t of env.trees) (t[4] ? con : dec).push(t);
-  const dummy = new THREE.Object3D(), col = new THREE.Color();
-  const crownG = (() => { const parts = []; const S = [[0, 0, 0, 1], [0.45, 0.25, 0.2, 0.68], [-0.4, 0.3, -0.25, 0.65], [0.1, 0.55, -0.35, 0.6], [-0.15, -0.25, 0.45, 0.6]];
-    for (const [x, y, z, r] of S) { const g = new THREE.IcosahedronGeometry(r, 2); const p = g.attributes.position; for (let i = 0; i < p.count; i++) { const v = new THREE.Vector3().fromBufferAttribute(p, i); const k = 0.9 + 0.14 * Math.sin(v.x * 9.1 + v.y * 7.7) * Math.cos(v.z * 8.3 - v.y * 5.1); p.setXYZ(i, v.x * k + x, v.y * k + y, v.z * k + z); } parts.push(g); }
-    let m = mergeGeometries(parts.map(g => { g.deleteAttribute('uv'); g.deleteAttribute('normal'); return mergeVertices(g); })); m.computeVertexNormals(); m.scale(0.8, 0.8, 0.8); return m; })();
-  const coneG = new THREE.ConeGeometry(1, 1, 8, 3); coneG.translate(0, 0.5, 0);
-  const trunkG = new THREE.CylinderGeometry(0.11, 0.17, 1, 6); trunkG.translate(0, 0.5, 0);
-  const crownM = new THREE.MeshStandardMaterial({ roughness: 1.0 });
-  const dM = new THREE.InstancedMesh(crownG, crownM, dec.length), cM = new THREE.InstancedMesh(coneG, crownM, con.length), tM = new THREE.InstancedMesh(trunkG, new THREE.MeshStandardMaterial({ color: 0x4a3d33, roughness: 1 }), env.trees.length);
-  let k = 0; const R = n => (Math.sin(n * 12.9898) * 43758.5453) % 1;
-  dec.forEach((t, i) => { const [x, z, h, r0] = t; const r = Math.max(r0, h * 0.26); const ch = h < 3 ? h * 0.95 : Math.min(h * 0.78, r * 2.8); dummy.position.set(x, -0.3 + h - ch / 2, z); dummy.scale.set(r, ch / 2, r * (0.9 + 0.2 * Math.abs(R(i)))); dummy.rotation.set(0, R(i * 3) * 6, 0); dummy.updateMatrix(); dM.setMatrixAt(i, dummy.matrix);
-    col.setHSL(0.24 + 0.05 * Math.abs(R(i * 7)), 0.38 + 0.15 * Math.abs(R(i * 5)), 0.10 + 0.06 * Math.abs(R(i * 11))); dM.setColorAt(i, col);
-    dummy.position.set(x, -0.3, z); dummy.scale.set(Math.max(0.6, r / 3.5), h < 3 ? 0.01 : h - ch * 0.75, Math.max(0.6, r / 3.5)); dummy.rotation.set(0, 0, 0); dummy.updateMatrix(); tM.setMatrixAt(k++, dummy.matrix); });
-  con.forEach((t, i) => { const [x, z, h, r] = t; dummy.position.set(x, -0.3 + h * 0.12, z); dummy.scale.set(r * 0.75, h * 0.9, r * 0.75); dummy.rotation.set(0, R(i) * 6, 0); dummy.updateMatrix(); cM.setMatrixAt(i, dummy.matrix);
-    col.setHSL(0.33 + 0.04 * Math.abs(R(i * 3)), 0.3, 0.07 + 0.04 * Math.abs(R(i * 13))); cM.setColorAt(i, col);
-    dummy.position.set(x, -0.3, z); dummy.scale.set(0.8, h * 0.2, 0.8); dummy.rotation.set(0, 0, 0); dummy.updateMatrix(); tM.setMatrixAt(k++, dummy.matrix); });
-  tM.count = k;
-  for (const m of [dM, cM, tM]) { m.castShadow = true; m.receiveShadow = true; m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; scene.add(m); }
+{ // trees from the national canopy-height model (nDSM, 1 m) — positions and heights are real.
+  // Each tree is an impostor: 8 azimuths × 2 elevations rendered in Blender Cycles from photo-scanned models.
+  const TM = await (await fetch('assets/trees/trees.json')).json();
+  const R = n => Math.abs((Math.sin(n * 12.9898) * 43758.5453) % 1);
+  const pick = (t, i) => { const q = R(t[0] * 0.37 + t[1] * 1.13); return q < 0.35 ? 'spruce' : q < 0.6 ? 'decA' : 'decB'; };
+  const byVar = {}; env.trees.forEach((t, i) => { const v = pick(t, i); (byVar[v] ||= []).push(t); });
+  const VERT = `
+    vec4 o4 = modelMatrix * instanceMatrix * vec4(0., 0., 0., 1.); vec3 O = o4.xyz;
+    float sx = length(instanceMatrix[0].xyz), sy = length(instanceMatrix[1].xyz);
+    vec3 Cc = O + vec3(0., uCz * sy, 0.); vec3 toC = cameraPosition - Cc;
+    float row = atan(toC.y, length(toC.xz)) > 0.42 ? 1. : 0.;
+    float fw = mix(uF.x, uF.z, row) * sx, fh = mix(uF.y, uF.w, row) * sy;
+    float yaw = fract(sin(dot(O.xz, vec2(12.9898, 78.233))) * 43758.5453) * 6.2831853;
+    float az = atan(-toC.z, toC.x) + yaw;
+    float kf = mod(floor(az / 6.2831853 * 8. + 0.5), 8.);
+    vec3 rgt = vec3(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]);
+    vec3 upv = vec3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]);
+    if (row < 0.5) { rgt = normalize(vec3(rgt.x, 0., rgt.z) + 1e-5); upv = vec3(0., 1., 0.); }
+    vec3 wp = Cc + rgt * position.x * fw + upv * position.y * fh;
+    vec4 mvPosition = viewMatrix * vec4(wp, 1.);
+    gl_Position = projectionMatrix * mvPosition;
+    vMapUv = vec2((kf + uv.x) / 8., (row + uv.y) / 2.);`;
+  const inject = (mat, m) => { mat.onBeforeCompile = sh => { sh.uniforms.uF = { value: new THREE.Vector4(m.frames[0].w, m.frames[0].h, m.frames[1].w, m.frames[1].h) }; sh.uniforms.uCz = { value: m.cz };
+      sh.vertexShader = 'uniform vec4 uF; uniform float uCz;\n' + sh.vertexShader.replace('#include <project_vertex>', VERT); }; mat.customProgramCacheKey = () => 'imp' + m.cz.toFixed(3); };
+  const quadG = new THREE.PlaneGeometry(1, 1);
+  const meshes = [], lists = [];
+  window.__treeMats = [];
+  for (const [v, list] of Object.entries(byVar)) { const m = TM[v]; if (!m) continue;
+    const atlas = tex(`assets/trees/${v}.webp`); atlas.anisotropy = 4;
+    const mat = new THREE.MeshBasicMaterial({ map: atlas, alphaTest: 0.42, side: THREE.DoubleSide, toneMapped: false }); inject(mat, m); window.__treeMats.push(mat);
+    const dm = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, map: atlas, alphaTest: 0.42 }); inject(dm, m);
+    const im = new THREE.InstancedMesh(quadG, mat, list.length); im.customDepthMaterial = dm; im.frustumCulled = false;
+    const d = new THREE.Object3D();
+    list.forEach((t, i) => { const [x, z, h, r] = t; const sy = h / m.H; const sx = THREE.MathUtils.clamp((Math.max(r * 2, h * 0.45)) / m.W, sy * 0.8, sy * 1.25);
+      d.position.set(x, -0.3, z); d.scale.set(sx, sy, sx); d.updateMatrix(); im.setMatrixAt(i, d.matrix); });
+    im.castShadow = true; im.receiveShadow = false; scene.add(im); meshes.push(im); lists.push(list);
+  }
+  window.__trees = meshes;
   // hide trees the camera flies into (tour / aerial), restore when it leaves
-  const dMat = [], cMat = []; const tmp = new THREE.Matrix4(), zero = new THREE.Matrix4().makeScale(0, 0, 0);
-  for (let i = 0; i < dec.length; i++) { dM.getMatrixAt(i, tmp); dMat.push(tmp.clone()); }
-  for (let i = 0; i < con.length; i++) { cM.getMatrixAt(i, tmp); cMat.push(tmp.clone()); }
-  const tMat = []; for (let i = 0; i < k; i++) { tM.getMatrixAt(i, tmp); tMat.push(tmp.clone()); }
-  const hidden = new Set(); window.__trees = [dM, cM, tM];
+  const orig = meshes.map(im => { const a = []; const t = new THREE.Matrix4(); for (let i = 0; i < im.count; i++) { im.getMatrixAt(i, t); a.push(t.clone()); } return a; });
+  const zero = new THREE.Matrix4().makeScale(0, 0, 0), hidden = new Set();
   window.__treeCull = (cam, on) => {
-    const p = cam.position; let ch = false;
-    const test = (list, mesh, mats, key, off) => list.forEach((t, i) => { const [x, z, h, r] = t; const cy = -0.3 + h * 0.62; const d = Math.hypot(p.x - x, p.z - z, (p.y - cy) * 0.8);
-      const near = on && d < Math.max(r, h * 0.26) * 2.0 + 5; const kk = key + i;
-      if (near && !hidden.has(kk)) { hidden.add(kk); mesh.setMatrixAt(i, zero); tM.setMatrixAt(i + off, zero); ch = true; } else if (!near && hidden.has(kk)) { hidden.delete(kk); mesh.setMatrixAt(i, mats[i]); tM.setMatrixAt(i + off, tMat[i + off]); ch = true; } });
-    test(dec, dM, dMat, 'd', 0); test(con, cM, cMat, 'c', dec.length);
-    if (ch) { dM.instanceMatrix.needsUpdate = true; cM.instanceMatrix.needsUpdate = true; tM.instanceMatrix.needsUpdate = true; }
+    const p = cam.position;
+    meshes.forEach((im, mi) => { let ch = false; lists[mi].forEach((t, i) => { const [x, z, h, r] = t; const cy = -0.3 + h * 0.62; const d = Math.hypot(p.x - x, p.z - z, (p.y - cy) * 0.8);
+      const near = on && d < Math.max(r, h * 0.26) * 2.0 + 5; const kk = mi * 100000 + i;
+      if (near && !hidden.has(kk)) { hidden.add(kk); im.setMatrixAt(i, zero); ch = true; } else if (!near && hidden.has(kk)) { hidden.delete(kk); im.setMatrixAt(i, orig[mi][i]); ch = true; } });
+      if (ch) im.instanceMatrix.needsUpdate = true; });
   };
+  const tintBase = (qs.has('hq') ? qs.get('hq') !== '0' : !matchMedia('(pointer:coarse)').matches) ? 1.3 : 1.0; // post chain tone-maps the sprites
+  window.__treeTint = k => window.__treeMats.forEach(m => m.color.setScalar(k * tintBase));
 }
 { // neighbour buildings: footprints from the national building register map, roof colour from the orthophoto
   const wallCols = [0xeeebe4, 0xe2ddd2, 0xd5cfc3, 0xf4f2ec, 0xb9b6ae, 0x8e8a82, 0x6f5c4b];
@@ -515,7 +536,8 @@ function setSun(month, hour) {
   sun.intensity = 3.4 * k; hemi.intensity = 0.45 + 0.85 * THREE.MathUtils.clamp((el + 0.1) / 0.4, 0, 1);
   sun.color.setHSL(0.09, 0.6, 0.62 + 0.3 * k);
   renderer.toneMappingExposure = el > 0 ? 0.6 : 0.85;
-  clearTimeout(window.__envT); window.__envT = setTimeout(() => { if (!window.__waterMat || (typeof night !== 'undefined' && night.on)) return; if (envRT) envRT.dispose(); envRT = pmrem.fromScene(skyScene(d), 0.02); window.__waterMat.envMap = envRT.texture; window.__waterMat.needsUpdate = true; }, 120);
+  if (window.__treeTint) window.__treeTint(0.5 + 0.5 * k);
+  clearTimeout(window.__envT); window.__envT = setTimeout(() => { if (!window.__waterMat || (typeof night !== 'undefined' && night.on)) return; if (envRT) envRT.dispose(); envRT = pmrem.fromScene(skyScene(d), 0.02); window.__waterMat.envMap = envRT.texture; window.__waterMat.needsUpdate = true; scene.environment = envRT.texture; }, 120);
   $('#sunLbl').textContent = `${Math.floor(hour)}:${String(Math.round((hour % 1) * 60)).padStart(2, '0')}`;
 }
 function skyScene(d) { const s = new THREE.Scene(); const k = new Sky(); k.scale.setScalar(100); Object.keys(su).forEach(n => k.material.uniforms[n].value = su[n].value); k.material.uniforms.sunPosition.value = d.clone(); s.add(k); return s; }
@@ -570,7 +592,7 @@ function setNight(on) {
     const d = new THREE.Vector3(-0.35, 0.8, 0.45).normalize(); const c = toWorld(8, 8, 0);
     sun.target.position.copy(c); sun.position.copy(c).addScaledVector(d, 150);
     sun.color.setHex(0x9db4e0); sun.intensity = 0.32; hemi.color.setHex(0x30466e); hemi.groundColor.setHex(0x0b0d10); hemi.intensity = 0.45;
-    scene.environmentIntensity = 0.1; renderer.toneMappingExposure = 0.95;
+    scene.environmentIntensity = 0.1; renderer.toneMappingExposure = 0.95; if (window.__treeTint) window.__treeTint(0.1);
   } else { hemi.color.setHex(0xe9eef2); hemi.groundColor.setHex(0x8a826f); scene.environmentIntensity = 0.85; setSun(+$('#sunMonth').value, +$('#sunTime').value); }
   $('#nightBtn').classList.toggle('on', on); $('#nightBtn').innerHTML = on ? '☀︎' : '☾'; $('#nightBtn').title = T[LANG][on ? 'day' : 'night'];
 }
@@ -854,7 +876,20 @@ let photosReady = null;
 async function openPhotos() { const mod = await import('./photo.js'); if (!photosReady) photosReady = mod.initPhotos({ THREE, scene, house, model, renderer, groups, toWorld, M, setSun, LANG: () => LANG }); }
 
 // ---------- loop ----------
-addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+// ---------- post-processing: ambient occlusion + SMAA (desktop; phones render directly) ----------
+const HQ = qs.has('hq') ? qs.get('hq') !== '0' : !matchMedia('(pointer:coarse)').matches;
+let composer = null, aoPass = null;
+if (HQ) {
+  composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(innerWidth, innerHeight, { type: THREE.HalfFloatType }));
+  aoPass = new N8AOPass(scene, camera, innerWidth, innerHeight);
+  Object.assign(aoPass.configuration, { aoRadius: 1.6, distanceFalloff: 1.0, intensity: 2.6, gammaCorrection: false, transparencyAware: true });
+  aoPass.setQualityMode('Medium');
+  composer.addPass(aoPass);
+  composer.addPass(new SMAAPass(innerWidth * renderer.getPixelRatio(), innerHeight * renderer.getPixelRatio()));
+  composer.addPass(new OutputPass());
+  composer.setSize(innerWidth, innerHeight);
+}
+addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); if (composer) composer.setSize(innerWidth, innerHeight); });
 const clock = new THREE.Clock();
 camera.position.copy(toWorld(-60, -70, 46)); controls.target.copy(toWorld(10, 12, 2)); camera.lookAt(controls.target);
 fly(toWorld(-30, -34, 22), toWorld(10, 12, 2), 4);
@@ -863,7 +898,7 @@ function loop() {
   stepFly(dt); stepTour(dt); stepWalk(dt); updateMini(); if (window.__water) window.__water(dt);
   if (!touring && !flyAnim && controls.enabled) controls.update();
   if (window.__treeCull) window.__treeCull(camera, mode !== 'walk');
-  renderer.render(scene, camera);
+  if (composer) composer.render(dt); else renderer.render(scene, camera);
   requestAnimationFrame(loop);
 }
 mgr.onLoad = () => { $('#loader').style.opacity = 0; setTimeout(() => $('#loader').remove(), 900); };
