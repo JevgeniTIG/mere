@@ -340,24 +340,47 @@ const env = await (await fetch('assets/env.json')).json();
   const R = n => Math.abs((Math.sin(n * 12.9898) * 43758.5453) % 1);
   const pick = (t, i) => { const q = R(t[0] * 0.37 + t[1] * 1.13); return q < 0.35 ? 'spruce' : q < 0.6 ? 'decA' : 'decB'; };
   const byVar = {}; env.trees.forEach((t, i) => { const v = pick(t, i); (byVar[v] ||= []).push(t); });
+  // Billboard pinned at the trunk base (never floats); azimuth and elevation views are cross-faded per pixel.
   const VERT = `
     vec4 o4 = modelMatrix * instanceMatrix * vec4(0., 0., 0., 1.); vec3 O = o4.xyz;
     float sx = length(instanceMatrix[0].xyz), sy = length(instanceMatrix[1].xyz);
-    vec3 Cc = O + vec3(0., uCz * sy, 0.); vec3 toC = cameraPosition - Cc;
-    float row = atan(toC.y, length(toC.xz)) > 0.42 ? 1. : 0.;
-    float fw = mix(uF.x, uF.z, row) * sx, fh = mix(uF.y, uF.w, row) * sy;
+    vec3 toC = cameraPosition - (O + vec3(0., uCz * sy, 0.));
+    vImpEl = atan(toC.y, length(toC.xz));
     float yaw = fract(sin(dot(O.xz, vec2(12.9898, 78.233))) * 43758.5453) * 6.2831853;
-    float az = atan(-toC.z, toC.x) + yaw;
-    float kf = mod(floor(az / 6.2831853 * 8. + 0.5), 8.);
+    vImpAz = atan(-toC.z, toC.x) + yaw;
+    vImpS = vec2(sx, sy);
     vec3 rgt = vec3(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]);
     vec3 upv = vec3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]);
-    if (row < 0.5) { rgt = normalize(vec3(rgt.x, 0., rgt.z) + 1e-5); upv = vec3(0., 1., 0.); }
-    vec3 wp = Cc + rgt * position.x * fw + upv * position.y * fh;
+    float qw = max(uF.x, uF.z) * sx, y0 = -0.08 * uCz * 2. * sy, y1 = max(uC.x + uF.y * .5, uC.y + uF.w * .5) * sy;
+    vImpP = vec2(position.x * qw, mix(y0, y1, position.y + .5));
+    vec3 wp = O + rgt * vImpP.x + upv * vImpP.y;
     vec4 mvPosition = viewMatrix * vec4(wp, 1.);
-    gl_Position = projectionMatrix * mvPosition;
-    vMapUv = vec2((kf + uv.x) / 8., (row + uv.y) / 2.);`;
-  const inject = (mat, m) => { mat.onBeforeCompile = sh => { sh.uniforms.uF = { value: new THREE.Vector4(m.frames[0].w, m.frames[0].h, m.frames[1].w, m.frames[1].h) }; sh.uniforms.uCz = { value: m.cz };
-      sh.vertexShader = 'uniform vec4 uF; uniform float uCz;\n' + sh.vertexShader.replace('#include <project_vertex>', VERT); }; mat.customProgramCacheKey = () => 'imp' + m.cz.toFixed(3); };
+    gl_Position = projectionMatrix * mvPosition;`;
+  const FRAG_FN = `
+    vec4 impFrame(float k, float r) {
+      k = mod(k, 8.);
+      float fw = (r < .5 ? uF.x : uF.z) * vImpS.x, fh = (r < .5 ? uF.y : uF.w) * vImpS.y, c = (r < .5 ? uC.x : uC.y) * vImpS.y;
+      vec2 uv = vec2(vImpP.x / fw + .5, (vImpP.y - c) / fh + .5);
+      if (uv.x < 0. || uv.x > 1. || uv.y < 0. || uv.y > 1.) return vec4(0.);
+      vec4 t = texture2D(map, vec2((k + uv.x) / 8., (r + clamp(uv.y, .002, .998)) / 2.)); return vec4(t.rgb * t.a, t.a);
+    }
+    vec4 impSample() {
+      float a = vImpAz / 6.2831853 * 8.; float k0 = floor(a), t = smoothstep(.15, .85, a - k0);
+      float e = smoothstep(0.17, 0.62, vImpEl);
+      vec4 lo = mix(impFrame(k0, 0.), impFrame(k0 + 1., 0.), t);
+      vec4 hi = mix(impFrame(k0, 1.), impFrame(k0 + 1., 1.), t);
+      vec4 c = mix(lo, hi, e);
+      c.rgb /= max(c.a, 1e-3); return c;
+    }`;
+  const DECL = 'uniform vec4 uF; uniform vec2 uC; uniform float uCz; varying vec2 vImpP; varying vec2 vImpS; varying float vImpAz; varying float vImpEl;\n';
+  const inject = (mat, m) => { mat.onBeforeCompile = sh => {
+      const e0 = 6 * Math.PI / 180, e1 = 42 * Math.PI / 180;
+      sh.uniforms.uF = { value: new THREE.Vector4(m.frames[0].w, m.frames[0].h, m.frames[1].w, m.frames[1].h) };
+      sh.uniforms.uC = { value: new THREE.Vector2(m.cz * Math.cos(e0), m.cz * Math.cos(e1)) }; sh.uniforms.uCz = { value: m.cz };
+      sh.vertexShader = DECL + sh.vertexShader.replace('#include <project_vertex>', VERT);
+      sh.fragmentShader = DECL + sh.fragmentShader.replace('#include <map_pars_fragment>', '#include <map_pars_fragment>\n' + FRAG_FN)
+        .replace('#include <map_fragment>', 'vec4 sampledDiffuseColor = impSample(); diffuseColor *= sampledDiffuseColor;'); };
+    mat.customProgramCacheKey = () => 'imp2' + m.cz.toFixed(3); };
   const quadG = new THREE.PlaneGeometry(1, 1);
   const meshes = [], lists = [];
   window.__treeMats = [];
