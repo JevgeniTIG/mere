@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MERE — kaasaegne eramu mere ääres · Tammneeme</title>
+<meta name="description" content="Interaktiivne 3D-visualiseering: kaasaegne üksikelamu Tammneemes, Viimsi vallas. 3D tour of a modern seaside home in Tammneeme, Estonia.">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%226%22 fill=%22%23111%22/%3E%3Ctext x=%2216%22 y=%2222%22 font-size=%2216%22 text-anchor=%22middle%22 fill=%22%23d9c3a5%22 font-family=%22serif%22%3EM%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="loader"><div class="lw"><div class="brand">MERE</div><div class="bar"><i id="lbar"></i></div><div id="ltext" class="small">…</div></div></div>
+
+<header id="top">
+  <div class="brand-sm">MERE</div>
+  <nav id="modes">
+    <button data-mode="tour" class="on" data-i18n="m_tour">Ülevaade</button>
+    <button data-mode="aerial" data-i18n="m_aerial">Linnulennult</button>
+    <button data-mode="walk" data-i18n="m_walk">Jaluta</button>
+    <button data-mode="plan" data-i18n="m_plan">Korruseplaanid</button>
+    <button data-mode="photo" data-i18n="m_photo">Krunt täna</button>
+  </nav>
+  <button id="nightBtn" class="nightbtn" title="Öö">☾</button>
+  <div id="langs"><button data-lang="et" class="on">ET</button><button data-lang="en">EN</button><button data-lang="ru">RU</button></div>
+</header>
+
+<section id="hero">
+  <div class="hero-in">
+    <div class="eyebrow" data-i18n="eyebrow">Tammneeme · Viimsi vald · Eesti</div>
+    <h1 data-i18n="h1">Kaasaegne kodu<br>mere ääres</h1>
+    <p class="lead" data-i18n="lead">Kahekorruseline CLT-puitkarkassiga eramu suurte klaaspindadega. Meri on kohe üle tee.</p>
+    <div class="facts">
+      <div><b>298,9 m²</b><span data-i18n="f_net">köetav pind</span></div>
+      <div><b>6</b><span data-i18n="f_rooms">tuba</span></div>
+      <div><b>A</b><span data-i18n="f_energy">energiaklass</span></div>
+      <div><b>1594 m²</b><span data-i18n="f_plot">krunt</span></div>
+    </div>
+    <div class="cta"><button id="play" class="play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg><span data-i18n="play">Vaata tuuri</span></button>
+    <button id="skip" class="ghost" data-i18n="explore">Uuri ise</button></div>
+  </div>
+</section>
+
+<div id="caption"><div id="captext"></div></div>
+<button id="stoptour" class="ghost small hidden" data-i18n="stop">Peata tuur</button>
+
+<aside id="panel" class="hidden">
+  <button id="panelClose" class="pclose" aria-label="Close">×</button>
+  <div class="ptitle" data-i18n="about">Hoone</div>
+  <dl>
+    <dt data-i18n="k_area">Köetav pind</dt><dd>298,9 m²</dd>
+    <dt data-i18n="k_gross">Suletud brutopind</dt><dd>353,3 m²</dd>
+    <dt data-i18n="k_footprint">Ehitisealune pind</dt><dd>239,8 m²</dd>
+    <dt data-i18n="k_floors">Korruseid</dt><dd>2</dd>
+    <dt data-i18n="k_height">Kõrgus</dt><dd>7,1 m</dd>
+    <dt data-i18n="k_balc">Rõdud</dt><dd>80,0 m²</dd>
+    <dt data-i18n="k_park">Parkimine</dt><dd data-i18n="v_park">3 kohta, neist 2 varjualuses</dd>
+    <dt data-i18n="k_energy">Energiatõhusus</dt><dd data-i18n="v_energy">A · ETA 100 kWh/(m²·a)</dd>
+    <dt data-i18n="k_pv">Päikesepaneelid</dt><dd data-i18n="v_pv">≈2 430 kWh aastas</dd>
+    <dt data-i18n="k_struct">Kandekonstruktsioon</dt><dd data-i18n="v_struct">CLT ristkihtpuit</dd>
+  </dl>
+  <div class="ptitle" data-i18n="materials">Materjalid</div>
+  <ul class="mats">
+    <li><i style="background:#ecece7"></i><span data-i18n="mat1">Suureformaadiline keraamiline fassaadiplaat, valge</span></li>
+    <li><i style="background:#523828"></i><span data-i18n="mat2">Thermory männilaudis 140×20, tumepruun</span></li>
+    <li><i style="background:#9d9a95"></i><span data-i18n="mat3">Looduslik kivi, hall</span></li>
+    <li><i style="background:#1e1e20"></i><span data-i18n="mat4">Alumiiniumraamid ja uksed, must</span></li>
+    <li><i style="background:linear-gradient(135deg,#bcd3dc,#eef5f7)"></i><span data-i18n="mat5">Klaaspiirded, kolmekordne klaaspakett</span></li>
+  </ul>
+  <div class="src small" data-i18n="src">Põhineb ehitusprojektil (AB Standup OÜ, töö 25121201) ja geodeetilisel alusplaanil. Asukoht L-EST97 koordinaatide järgi. Ortofoto © Maa- ja Ruumiamet.</div>
+</aside>
+
+<div id="tools" class="hidden">
+  <div class="tgroup" id="g-cut">
+    <span class="tl" data-i18n="t_view">Vaade</span>
+    <button data-cut="0" class="on" data-i18n="cut0">Terve</button>
+    <button data-cut="1" data-i18n="cut1">Ilma katuseta</button>
+    <button data-cut="2" data-i18n="cut2">1. korrus</button>
+  </div>
+  <div class="tgroup" id="g-floor">
+    <span class="tl" data-i18n="t_floor">Korrus</span>
+    <button data-floor="1" class="on">1</button>
+    <button data-floor="2">2</button>
+  </div>
+  <div class="tgroup sun">
+    <span class="tl" data-i18n="t_sun">Päike</span>
+    <input type="range" id="sunTime" min="4" max="22" step="0.25" value="17.5">
+    <span id="sunLbl" class="small">17:30</span>
+    <select id="sunMonth">
+      <option value="3" data-i18n="mar">märts</option><option value="6" selected data-i18n="jun">juuni</option><option value="9" data-i18n="sep">september</option><option value="12" data-i18n="dec">detsember</option>
+    </select>
+  </div>
+  <button id="infoBtn" class="ghost small" data-i18n="info">Andmed</button>
+</div>
+
+<div id="walkhud" class="hidden">
+  <div id="roomname"></div>
+  <div class="small hint" data-i18n="walkhint">Lohista vaatamiseks · WASD / nooled liikumiseks · trepist üles-alla</div>
+</div>
+<div id="joy" class="hidden"><i></i></div>
+<div id="minimap" class="hidden"><svg id="minisvg"></svg></div>
+
+<section id="planview" class="hidden">
+  <div class="plan-head">
+    <div class="tabs"><button data-pf="1" class="on" data-i18n="floor1">1. korrus</button><button data-pf="2" data-i18n="floor2">2. korrus</button></div>
+    <div class="small" data-i18n="planhint">Klõpsa ruumil — astud sinna sisse</div>
+  </div>
+  <div class="plan-wrap"><svg id="plansvg"></svg><div class="zoomctl"><button id="zin" aria-label="zoom in">+</button><button id="zout" aria-label="zoom out">−</button><button id="zfit" aria-label="fit">⤢</button></div></div>
+  <div id="roomlist"></div>
+</section>
+
+<section id="photoview" class="hidden">
+  <div class="ph-stage"><img id="phimg" alt=""><canvas id="phcan"></canvas></div>
+  <div class="ph-bar">
+    <div id="phthumbs"></div>
+    <label class="small"><input type="range" id="phmix" min="0" max="1" step="0.01" value="1"> <span data-i18n="before_after">enne / pärast</span></label>
+  </div>
+  <div class="small ph-note"></div>
+</section>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
