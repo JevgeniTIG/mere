@@ -970,7 +970,9 @@ function buildPlan(fl) {
   planFloor = fl; $$('.tabs button').forEach(b => b.classList.toggle('on', +b.dataset.pf === fl));
   const svg = $('#plansvg');
   const PH_ = matchMedia('(max-width:820px)').matches;   // phones: frame the house edge to edge (≈2× larger)
-  const minU = PH_ ? -0.6 : -1.6, maxU = PH_ ? 17.2 : 19.4, minV = PH_ ? -0.6 : -1.6, maxV = PH_ ? 14.4 : 14.6;   // framed tight on the house (≈2× the old plot-wide view)
+  const zf = PH_ ? 1 / 0.9 : 1 / 0.8;   // plan shown 10% (phones) / 20% (desktop) smaller than the tight house frame
+  const cU = PH_ ? 8.3 : 8.9, cV = PH_ ? 6.9 : 6.5, hw = (PH_ ? 8.9 : 10.5) * zf, hh = (PH_ ? 7.5 : 8.1) * zf;
+  const minU = cU - hw, maxU = cU + hw, minV = cV - hh, maxV = cV + hh;   // framed tight on the house (≈2× the old plot-wide view)
   let { h, list } = planMarkup(fl, false);
   // north arrow (true north in local frame)
   const nr = model.frame.rot; const na = [Math.sin(nr), Math.cos(nr)];
