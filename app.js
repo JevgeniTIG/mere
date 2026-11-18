@@ -225,9 +225,9 @@ for (const f of model.faces) {
     const mu = -n[0] * (0.012 + bt / 2), mv = -n[1] * (0.012 + bt / 2);
     const dEdge = (x, y) => { let d = 1e9; for (let i = 0, j = FPp.length - 1; i < FPp.length; j = i++) { const [ax, ay] = FPp[j], [bx, by] = FPp[i], ex = bx - ax, ey = by - ay;
       const k = Math.max(0, Math.min(1, ((x - ax) * ex + (y - ay) * ey) / (ex * ex + ey * ey))); d = Math.min(d, Math.hypot(x - ax - k * ex, y - ay - k * ey)); } return d; };
-    const inWall = (x, y) => inFP(x, y) && dEdge(x, y) < t * 0.9;   // inside another wall's thickness, not out in a room
-    const ext = t - 0.02;
-    const e0 = inWall(u0 - du * ext * 0.5 + mu, v0 - dv * ext * 0.5 + mv) ? ext : 0, e1 = inWall(u1 + du * ext * 0.5 + mu, v1 + dv * ext * 0.5 + mv) ? ext : 0;
+    const inWall = (x, y) => inFP(x, y) && dEdge(x, y) < 0.43;   // inside a neighbouring outer wall (walls are up to 45 cm), not out in a room
+    const pick = sg => { for (const e of [0.43, 0.3, Math.max(0.05, t - 0.02)]) if (inWall((sg < 0 ? u0 : u1) + sg * du * e * 0.75 + mu, (sg < 0 ? v0 : v1) + sg * dv * e * 0.75 + mv)) return e; return 0; };
+    const e0 = pick(-1), e1 = pick(1);
     const zb0 = f.floor === 1 ? 0 : 3.5, zb1 = f.floor === 1 ? 3.0 : 6.5;
     const body = new THREE.Mesh(new THREE.BoxGeometry(Lw + e0 + e1, zb1 - zb0, bt), interiorBody);
     const cu = (u0 + u1) / 2 + du * (e1 - e0) / 2 + mu, cvv = (v0 + v1) / 2 + dv * (e1 - e0) / 2 + mv;
