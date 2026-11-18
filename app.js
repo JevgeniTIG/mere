@@ -137,6 +137,11 @@ function quad(a, b, c, d, nWanted, uv = [0,0, 1,0, 1,1, 0,1]) {
 // ---------- loading progress ----------
 let toLoad = 0, loaded = 0;
 const mgr = THREE.DefaultLoadingManager;
+// panes drawn side by side (a few cm apart, similar height) are one opening; a pane overlapping another (transom) too
+function mergeOps(wins) { const ws = [...wins].sort((a, b) => a[0] - b[0]), ops = [];
+  for (const w of ws) { const o = ops[ops.length - 1];
+    if (o && (w[0] < o[1] - 0.02 || (w[0] - o[1] < 0.15 && Math.abs(w[2] - o[2]) < 0.3 && Math.abs(w[3] - o[3]) < 0.3))) { o[1] = Math.max(o[1], w[1]); o[2] = Math.min(o[2], w[2]); o[3] = Math.max(o[3], w[3]); } else ops.push([...w]); }
+  return ops; }
 const interiorBody = new THREE.MeshStandardMaterial({ color: 0xf3f0eb, roughness: 0.9 });
 mgr.onProgress = (u, l, t) => { $('#lbar').style.width = (100 * l / t) + '%'; };
 function tex(url, color = true) { const t = TL.load(url); if (color) t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = aniso; return t; }
@@ -172,7 +177,7 @@ for (const f of model.faces) {
       const zCeil = f.floor === 1 ? 2.985 : 6.48, N = W * H;
       const inWin = new Uint8Array(N), glass = new Uint8Array(N);
       const zFl = f.floor === 1 ? 0 : 3.5;
-      for (let [a, b, za, zb] of f.wins) {
+      for (let [a, b, za, zb] of mergeOps(f.wins)) {
         if (za < zFl + 0.06) za = f.z0;   // door / floor-to-ceiling glass: cut right down, no plaster lip on the floor
         if (zb > zCeil - 0.06) zb = f.z1;
         const x0 = Math.max(0, Math.floor(a * sx)), x1 = Math.min(W, Math.ceil(b * sx)), y0 = Math.max(0, Math.floor((f.z1 - zb) * sz)), y1 = Math.min(H, Math.ceil((f.z1 - za) * sz));   // whole pixels, so neighbouring panes stay one opening (no plaster hairline between them); reveals are set 2 cm wider to close the edge
@@ -187,6 +192,10 @@ for (const f of model.faces) {
           l = 1e9; for (let y = H - 1; y >= 0; y--) { if (t[y * W + x]) l = y; if (l - y <= R) o[y * W + x] = 1; } }
         return o; };
       const near = dil(glass);
+      // mullions / transoms between panes (gaps up to 25 cm between glass) are frame too, not a sliver of plaster
+      const G = Math.round(0.25 * sx);
+      for (let y = 0; y < H; y++) { let last = -1; for (let x = 0; x < W; x++) { const i = y * W + x; if (near[i]) { if (last >= 0 && x - last > 1 && x - last <= G) for (let k = last + 1; k < x; k++) if (inWin[y * W + k]) near[y * W + k] = 1; last = x; } } }
+      for (let x = 0; x < W; x++) { let last = -1; for (let y = 0; y < H; y++) { const i = y * W + x; if (near[i]) { if (last >= 0 && y - last > 1 && y - last <= G) for (let k = last + 1; k < y; k++) if (inWin[k * W + x]) near[k * W + x] = 1; last = y; } } }
       const yCeil = Math.floor((f.z1 - zCeil) * sz);
       const outC = cv(), outX = outC.getContext('2d'), od = outX.createImageData(W, H);
       const inC = cv(), inX = inC.getContext('2d'), id = inX.createImageData(W, H);
@@ -252,11 +261,12 @@ for (const f of model.faces) {
 { const gs = [], thr = { 1: [], 2: [] };
   for (const f of model.faces) { if (!f.wins || !f.wins.length) continue;
     const [u0, v0] = f.p0, [u1, v1] = f.p1, n = f.n, t = f.t; const L = Math.hypot(u1 - u0, v1 - v0), tu = (u1 - u0) / L, tv = (v1 - v0) / L;
-    const ws = [...f.wins].sort((a, b) => a[0] - b[0]); const ops = [];
-    for (const w of ws) { const o = ops[ops.length - 1]; if (o && (w[0] < o[1] - 0.02 || (w[0] - o[1] < 0.15 && Math.abs(w[2] - o[2]) < 0.3 && Math.abs(w[3] - o[3]) < 0.3))) { o[1] = Math.max(o[1], w[1]); o[2] = Math.min(o[2], w[2]); o[3] = Math.max(o[3], w[3]); } else ops.push([...w]); }
+    const ops = mergeOps(f.wins);
     const zf = f.floor === 1 ? 0 : 3.5, zc = f.floor === 1 ? 3.0 : 6.5;
     const at = (s, d) => [u0 + tu * s - n[0] * d, v0 + tv * s - n[1] * d];
-    for (let [a, b, z0, z1] of ops) { a = Math.max(0, a - 0.02); b = Math.min(L, b + 0.02); z0 = Math.max(zf, z0 - (z0 > zf + 0.05 ? 0.02 : 0)); z1 = Math.min(zc, z1 + 0.02);
+    const sxp = Math.round(L * 80) / L, szp = 80;   // same whole-pixel edges as the wall cut-out (masks are 80 px/m)
+    for (let [a, b, z0, z1] of ops) { a = Math.max(0, Math.floor(a * sxp) / sxp); b = Math.min(L, Math.ceil(b * sxp) / sxp);
+      z0 = Math.max(zf, f.z1 - Math.ceil((f.z1 - z0) * szp) / szp); z1 = Math.min(zc, f.z1 - Math.floor((f.z1 - z1) * szp) / szp);
       const A0 = at(a, 0), A1 = at(a, t), B0 = at(b, 0), B1 = at(b, t);
       const nw = (x, y) => new THREE.Vector3(x, 0, -y);
       gs.push(quad(P(...A0, z0), P(...A1, z0), P(...A1, z1), P(...A0, z1), nw(tu, tv)));
