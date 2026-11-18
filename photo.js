@@ -11,7 +11,7 @@ const CAP = {
 const RN = [   // photoreal visualisations (ChatGPT, from frames of the 3D model)
   ['01_tanav', 'Peafassaad tänavalt', 'Main facade from the street', 'Главный фасад с улицы'],
   ['02_ohust', 'Maja ja meri linnulennult', 'The house and the sea from above', 'Дом и море с высоты'],
-  ['03_terrass', 'Aiaterrass', 'Garden terrace', 'Терраса в сад'],
+  ['03_terrass', 'Aiaterrass ja saunatsoon', 'Garden terrace and the sauna lounge', 'Терраса и зона сауны'],
   ['04_elutuba', 'Elutuba kaminaga', 'Living room with fireplace', 'Гостиная с камином'],
   ['05_kook', 'Köök ja söögituba merevaatega', 'Kitchen and dining with a sea view', 'Кухня-столовая с видом на море'],
 ];
