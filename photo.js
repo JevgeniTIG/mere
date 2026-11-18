@@ -34,7 +34,8 @@ export function initPhotos({ LANG }) {
   stage.append(prev, next, cnt);
   // two sets: renders (default) and drone photos
   const sets = document.createElement('div'); sets.className = 'ph-sets'; stage.append(sets);
-  let set = 0, cur = 0;
+  const SHOW_RENDERS = false;   // renders hidden for now — flip to true to bring the 'Visualiseeringud' set back
+  let set = SHOW_RENDERS ? 0 : 1, cur = 0; if (!SHOW_RENDERS) sets.style.display = 'none';
   const items = () => set === 0 ? RN.map(r => ({ src: `assets/renders/${r[0]}.jpg`, th: `assets/renders/t_${r[0]}.jpg`, cap: `${r[LI[LANG()]]} · ${NOTE[LANG()]}` }))
                                 : PH.map(([n, h]) => ({ src: `assets/photos/${n}.jpg`, th: `assets/photos/t_${n}.jpg`, cap: CAP[LANG()](h) }));
   const build = () => {
