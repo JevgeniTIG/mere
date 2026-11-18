@@ -137,6 +137,7 @@ function quad(a, b, c, d, nWanted, uv = [0,0, 1,0, 1,1, 0,1]) {
 // ---------- loading progress ----------
 let toLoad = 0, loaded = 0;
 const mgr = THREE.DefaultLoadingManager;
+const interiorBody = new THREE.MeshStandardMaterial({ color: 0xf3f0eb, roughness: 0.9 });
 mgr.onProgress = (u, l, t) => { $('#lbar').style.width = (100 * l / t) + '%'; };
 function tex(url, color = true) { const t = TL.load(url); if (color) t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = aniso; return t; }
 
@@ -204,6 +205,13 @@ for (const f of model.faces) {
       if (window.__innerByFace && window.__innerByFace[f.name]) { const im = window.__innerByFace[f.name]; im.alphaMap = mk(inC); im.needsUpdate = true; }
       frameMat.alphaMap = mk(frC); frameMat.needsUpdate = true; mf.visible = true;
     }));
+  }
+  if (!(f.wins && f.wins.length) && !(f.pass && f.pass.length)) {   // solid wall: fill its body so corner jogs have no see-through slot
+    const Lw = Math.hypot(u1 - u0, v1 - v0), bt = Math.max(0.05, t - 0.035), zb0 = f.floor === 1 ? 0 : 3.5, zb1 = f.floor === 1 ? 3.0 : 6.5;
+    const body = new THREE.Mesh(new THREE.BoxGeometry(Lw + 0.02, zb1 - zb0, bt), interiorBody);
+    const cu = (u0 + u1) / 2 - n[0] * (0.02 + bt / 2), cvv = (v0 + v1) / 2 - n[1] * (0.02 + bt / 2);
+    body.position.set(cu, (zb0 + zb1) / 2, -cvv); body.rotation.y = Math.atan2(v1 - v0, u1 - u0);
+    grp.add(body);
   }
   const iu0 = u0 - n[0] * t, iv0 = v0 - n[1] * t, iu1 = u1 - n[0] * t, iv1 = v1 - n[1] * t;
   const zi0 = f.floor === 1 ? 0 : 3.5, zi1 = f.floor === 1 ? 3.0 : 6.5;
