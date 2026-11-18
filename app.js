@@ -175,7 +175,7 @@ for (const f of model.faces) {
       for (let [a, b, za, zb] of f.wins) {
         if (za < zFl + 0.06) za = f.z0;   // door / floor-to-ceiling glass: cut right down, no plaster lip on the floor
         if (zb > zCeil - 0.06) zb = f.z1;
-        const x0 = Math.max(0, Math.ceil(a * sx)), x1 = Math.min(W, Math.floor(b * sx)), y0 = Math.max(0, Math.ceil((f.z1 - zb) * sz)), y1 = Math.min(H, Math.floor((f.z1 - za) * sz));   // stay inside the opening: the reveal closes the edge, no see-through hairline
+        const x0 = Math.max(0, Math.floor(a * sx)), x1 = Math.min(W, Math.ceil(b * sx)), y0 = Math.max(0, Math.floor((f.z1 - zb) * sz)), y1 = Math.min(H, Math.ceil((f.z1 - za) * sz));   // whole pixels, so neighbouring panes stay one opening (no plaster hairline between them); reveals are set 2 cm wider to close the edge
         for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) inWin[y * W + x] = 1;
       }
       for (let i = 0; i < N; i++) glass[i] = inWin[i] && gd[i * 4 + 1] > 127 ? 1 : 0;
@@ -256,15 +256,15 @@ for (const f of model.faces) {
     for (const w of ws) { const o = ops[ops.length - 1]; if (o && (w[0] < o[1] - 0.02 || (w[0] - o[1] < 0.15 && Math.abs(w[2] - o[2]) < 0.3 && Math.abs(w[3] - o[3]) < 0.3))) { o[1] = Math.max(o[1], w[1]); o[2] = Math.min(o[2], w[2]); o[3] = Math.max(o[3], w[3]); } else ops.push([...w]); }
     const zf = f.floor === 1 ? 0 : 3.5, zc = f.floor === 1 ? 3.0 : 6.5;
     const at = (s, d) => [u0 + tu * s - n[0] * d, v0 + tv * s - n[1] * d];
-    for (let [a, b, z0, z1] of ops) { a = Math.max(0, a); b = Math.min(L, b); z0 = Math.max(zf, z0); z1 = Math.min(zc, z1);
+    for (let [a, b, z0, z1] of ops) { a = Math.max(0, a - 0.02); b = Math.min(L, b + 0.02); z0 = Math.max(zf, z0 - (z0 > zf + 0.05 ? 0.02 : 0)); z1 = Math.min(zc, z1 + 0.02);
       const A0 = at(a, 0), A1 = at(a, t), B0 = at(b, 0), B1 = at(b, t);
       const nw = (x, y) => new THREE.Vector3(x, 0, -y);
       gs.push(quad(P(...A0, z0), P(...A1, z0), P(...A1, z1), P(...A0, z1), nw(tu, tv)));
       gs.push(quad(P(...B0, z0), P(...B1, z0), P(...B1, z1), P(...B0, z1), nw(-tu, -tv)));
       if (z1 < zc - 0.03) gs.push(quad(P(...A0, z1), P(...B0, z1), P(...B1, z1), P(...A1, z1), new THREE.Vector3(0, -1, 0)));
       if (z0 > zf + 0.05) gs.push(quad(P(...A0, z0), P(...B0, z0), P(...B1, z0), P(...A1, z0), new THREE.Vector3(0, 1, 0)));
-      else thr[f.floor === 1 ? 1 : 2].push(quad(P(...A0, zf + 0.012), P(...B0, zf + 0.012), P(...B1, zf + 0.012), P(...A1, zf + 0.012), new THREE.Vector3(0, 1, 0))); } }   // door threshold: floor runs out to the glass
-  for (const k of [1, 2]) if (thr[k].length) { const tm = M.oak.clone(); tm.side = THREE.DoubleSide; tm.polygonOffset = true; tm.polygonOffsetFactor = -2; const m = new THREE.Mesh(mergeGeometries(thr[k]), tm); m.receiveShadow = true; groups[k === 1 ? 'ground' : 'up'].add(m); }
+      else thr[f.floor === 1 ? 1 : 2].push(quad(P(...A0, zf + 0.006), P(...B0, zf + 0.006), P(...B1, zf + 0.006), P(...A1, zf + 0.006), new THREE.Vector3(0, 1, 0))); } }   // threshold sits under the floor boards: the floor wins where they overlap (no z-fight)   // door threshold: floor runs out to the glass
+  for (const k of [1, 2]) if (thr[k].length) { const tm = M.oak.clone(); tm.side = THREE.DoubleSide; const m = new THREE.Mesh(mergeGeometries(thr[k]), tm); m.receiveShadow = true; groups[k === 1 ? 'ground' : 'up'].add(m); }
   if (gs.length) { const rm = new THREE.MeshStandardMaterial({ color: 0xf3f0eb, roughness: 0.9, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2 }); interiorMats.push(rm);   // same plaster as the inner skin, drawn on top: corner jambs that share a plane with the next wall no longer flicker
     const m = new THREE.Mesh(mergeGeometries(gs), rm); m.castShadow = m.receiveShadow = true; groups.ground.add(m); }
 }
