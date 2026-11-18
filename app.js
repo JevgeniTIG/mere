@@ -154,6 +154,29 @@ for (const f of model.faces) {
   const ox = n[0] * 0.012, oy = n[1] * 0.012;
   const g = quad(P(u0 + ox, v0 + oy, f.z0), P(u1 + ox, v1 + oy, f.z0), P(u1 + ox, v1 + oy, f.z1), P(u0 + ox, v0 + oy, f.z1), nW);
   const mo = new THREE.Mesh(g, outer); mo.castShadow = mo.receiveShadow = true; grp.add(mo);
+  // windows: the outer skin is cut along the whole opening; frames are drawn once, as their own plane in the glass line
+  if (f.wins && f.wins.length) {
+    const frameMat = new THREE.MeshStandardMaterial({ color: 0x1d2024, roughness: 0.45, metalness: 0.2, alphaTest: 0.5, side: THREE.DoubleSide });
+    frameMat.alphaMap = am;   // replaced below once the mask image is in
+    const fo = -0.04, fx = n[0] * fo, fy = n[1] * fo;
+    const gf = quad(P(u0 + fx, v0 + fy, f.z0), P(u1 + fx, v1 + fy, f.z0), P(u1 + fx, v1 + fy, f.z1), P(u0 + fx, v0 + fy, f.z1), nW);
+    const mf = new THREE.Mesh(gf, frameMat); mf.name = 'winframe'; mf.castShadow = true; mf.visible = false; grp.add(mf);
+    new THREE.ImageLoader(mgr).load(`assets/m_${f.name}.png`, img => {
+      const W = img.width, H = img.height, Lf = Math.hypot(u1 - u0, v1 - v0), sx = W / Lf, sz = H / (f.z1 - f.z0);
+      const rect = ([a, b, za, zb]) => [a * sx, (f.z1 - zb) * sz, (b - a) * sx, (zb - za) * sz];
+      const cut = document.createElement('canvas'); cut.width = W; cut.height = H; const g1 = cut.getContext('2d');
+      g1.drawImage(img, 0, 0); g1.fillStyle = '#000'; for (const w of f.wins) g1.fillRect(...rect(w));
+      const fr = document.createElement('canvas'); fr.width = W; fr.height = H; const g2 = fr.getContext('2d');
+      g2.fillStyle = '#000'; g2.fillRect(0, 0, W, H);
+      const fw = Math.max(2, 0.055 * sx), fh = Math.max(2, 0.055 * sz);
+      const zCeil = f.floor === 1 ? 2.985 : 6.48;
+      for (const w0 of f.wins) { const w = [w0[0], w0[1], w0[2], Math.min(w0[3], zCeil)]; const r = rect(w); g2.drawImage(img, r[0], r[1], r[2], r[3], r[0], r[1], r[2], r[3]);
+        g2.fillStyle = '#fff'; g2.fillRect(r[0], r[1], r[2], fh); g2.fillRect(r[0], r[1] + r[3] - fh, r[2], fh); g2.fillRect(r[0], r[1], fw, r[3]); g2.fillRect(r[0] + r[2] - fw, r[1], fw, r[3]); }
+      const mk = c => { const t = new THREE.CanvasTexture(c); t.minFilter = THREE.LinearFilter; t.generateMipmaps = false; return t; };
+      outer.alphaMap = mk(cut); outer.needsUpdate = true;
+      frameMat.alphaMap = mk(fr); frameMat.needsUpdate = true; mf.visible = true;
+    });
+  }
   const iu0 = u0 - n[0] * t, iv0 = v0 - n[1] * t, iu1 = u1 - n[0] * t, iv1 = v1 - n[1] * t;
   const zi0 = f.floor === 1 ? 0 : 3.5, zi1 = f.floor === 1 ? 3.0 : 6.5;
   const fz = z => (z - f.z0) / (f.z1 - f.z0);
@@ -173,7 +196,7 @@ for (const f of model.faces) {
   // reveal caps (top and sides of the wall body) — thin dark frames read as window depth
   if (f.glass) {
     const gm = tex(`assets/g_${f.name}.png`, false); gm.minFilter = THREE.LinearFilter; gm.generateMipmaps = false;
-    const gu0 = u0 - n[0] * 0.05, gv0 = v0 - n[1] * 0.05, gu1 = u1 - n[0] * 0.05, gv1 = v1 - n[1] * 0.05;   // glass sits in the frame plane
+    const gu0 = u0 - n[0] * 0.045, gv0 = v0 - n[1] * 0.045, gu1 = u1 - n[0] * 0.045, gv1 = v1 - n[1] * 0.045;   // glass sits in the frame plane
     const gl = new THREE.MeshPhysicalMaterial({ color: 0xa9bcc2, roughness: 0.02, metalness: 0.05, transparent: true, opacity: 0.2, alphaMap: gm, depthWrite: false, side: THREE.DoubleSide, envMapIntensity: 0.55 });
     const gg = quad(P(gu0, gv0, f.z0), P(gu1, gv1, f.z0), P(gu1, gv1, f.z1), P(gu0, gv0, f.z1), nW);
     const mg = new THREE.Mesh(gg, gl); mg.renderOrder = 2; grp.add(mg);
