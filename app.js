@@ -175,7 +175,22 @@ for (const f of model.faces) {
       }
       const mk = c => { const t = new THREE.CanvasTexture(c); t.minFilter = THREE.LinearFilter; t.generateMipmaps = false; return t; };
       outer.alphaMap = mk(cut); outer.needsUpdate = true;
-      frameMat.alphaMap = mk(fr); frameMat.needsUpdate = true; mf.visible = true;
+      // keep frame pixels only where they border real glass (no stray bars beside the glazing)
+      new THREE.ImageLoader(mgr).load(`assets/g_${f.name}.png`, gimg => {
+        const gc = document.createElement('canvas'); gc.width = W; gc.height = H; const gx = gc.getContext('2d'); gx.drawImage(gimg, 0, 0, W, H);
+        const gd = gx.getImageData(0, 0, W, H).data, fd = g2.getImageData(0, 0, W, H);
+        const R = Math.max(2, Math.round(0.07 * sx)), glass = new Uint8Array(W * H);
+        for (let i = 0; i < W * H; i++) glass[i] = gd[i * 4 + 1] > 127 ? 1 : 0;
+        const rowMax = new Uint8Array(W * H);
+        for (let y = 0; y < H; y++) { let last = -1e9; for (let x = 0; x < W; x++) { if (glass[y * W + x]) last = x; rowMax[y * W + x] = x - last <= R ? 1 : 0; }
+          last = 1e9; for (let x = W - 1; x >= 0; x--) { if (glass[y * W + x]) last = x; if (last - x <= R) rowMax[y * W + x] = 1; } }
+        const near = new Uint8Array(W * H);
+        for (let x = 0; x < W; x++) { let last = -1e9; for (let y = 0; y < H; y++) { if (rowMax[y * W + x]) last = y; near[y * W + x] = y - last <= R ? 1 : 0; }
+          last = 1e9; for (let y = H - 1; y >= 0; y--) { if (rowMax[y * W + x]) last = y; if (last - y <= R) near[y * W + x] = 1; } }
+        for (let i = 0; i < W * H; i++) if (!near[i]) { fd.data[i * 4] = fd.data[i * 4 + 1] = fd.data[i * 4 + 2] = 0; }
+        g2.putImageData(fd, 0, 0);
+        frameMat.alphaMap = mk(fr); frameMat.needsUpdate = true; mf.visible = true;
+      });
     });
   }
   const iu0 = u0 - n[0] * t, iv0 = v0 - n[1] * t, iu1 = u1 - n[0] * t, iv1 = v1 - n[1] * t;
@@ -188,10 +203,11 @@ for (const f of model.faces) {
     const PX = 40, Lf = Math.hypot(u1 - u0, v1 - v0), c = document.createElement('canvas');
     c.width = Math.max(8, Math.ceil(Lf * PX)); c.height = Math.max(8, Math.ceil((f.z1 - f.z0) * PX));
     const g2 = c.getContext('2d'); g2.fillStyle = '#fff'; g2.fillRect(0, 0, c.width, c.height); g2.fillStyle = '#000';
-    for (const [a, b, za, zb] of f.wins) g2.fillRect(a * PX, (f.z1 - zb) * PX, (b - a) * PX, (zb - za) * PX);
+    const e = 0;
+    for (const [a, b, za, zb] of f.wins) g2.fillRect(a * PX + e, (f.z1 - zb) * PX + e, (b - a) * PX - 2 * e, (zb - za) * PX - 2 * e);
     iam = new THREE.CanvasTexture(c); iam.minFilter = THREE.LinearFilter; iam.generateMipmaps = false;
   }
-  const inner = new THREE.MeshStandardMaterial({ color: 0xf6f3ee, map: imap, roughness: 0.9, alphaMap: iam, alphaTest: 0.5 }); interiorMats.push(inner);
+  const inner = new THREE.MeshStandardMaterial({ color: 0xf3f0eb, roughness: 0.9, alphaMap: iam, alphaTest: 0.5 });   // plain plaster: frames live only in the frame plane interiorMats.push(inner);
   const gi = quad(P(iu0, iv0, zi0), P(iu1, iv1, zi0), P(iu1, iv1, zi1), P(iu0, iv0, zi1), nW.clone().negate(), [0, fz(zi0), 1, fz(zi0), 1, fz(zi1), 0, fz(zi1)]);
   const mi = new THREE.Mesh(gi, inner); mi.receiveShadow = true; mi.castShadow = true; grp.add(mi);
   // reveal caps (top and sides of the wall body) — thin dark frames read as window depth
