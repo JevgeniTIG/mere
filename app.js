@@ -282,7 +282,7 @@ for (const f of model.faces) {
 { const f = model.faces.find(x => x.name === 'g8');
   if (f) { const [u0, v0] = f.p0, [u1, v1] = f.p1, L = Math.hypot(u1 - u0, v1 - v0), tu = (u1 - u0) / L, tv = (v1 - v0) / L, n = f.n, d = f.t + 0.006;
     const at = (s, z) => P(u0 + tu * s - n[0] * d, v0 + tv * s - n[1] * d, z);
-    const s0 = 1.42, s1 = 2.78, zt = 2.6;
+    const s0 = 1.42, s1 = 2.72, zt = 2.6;
     const leaf = new THREE.Mesh(quad(at(s0, 0.012), at(s1, 0.012), at(s1, zt), at(s0, zt), new THREE.Vector3(-n[0], 0, n[1])), new THREE.MeshStandardMaterial({ color: 0x18191b, roughness: 0.55, side: THREE.DoubleSide }));
     groups.ground.add(leaf);
     const hs = 2.55, hb = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 1.2, 12), new THREE.MeshStandardMaterial({ color: 0xb9b9b6, roughness: 0.3, metalness: 1 }));
