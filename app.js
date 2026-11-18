@@ -206,10 +206,15 @@ for (const f of model.faces) {
       frameMat.alphaMap = mk(frC); frameMat.needsUpdate = true; mf.visible = true;
     }));
   }
-  if (!(f.wins && f.wins.length) && !(f.pass && f.pass.length)) {   // solid wall: fill its body so corner jogs have no see-through slot
-    const Lw = Math.hypot(u1 - u0, v1 - v0), bt = Math.max(0.05, t - 0.035), zb0 = f.floor === 1 ? 0 : 3.5, zb1 = f.floor === 1 ? 3.0 : 6.5;
-    const body = new THREE.Mesh(new THREE.BoxGeometry(Lw + 0.02, zb1 - zb0, bt), interiorBody);
-    const cu = (u0 + u1) / 2 - n[0] * (0.02 + bt / 2), cvv = (v0 + v1) / 2 - n[1] * (0.02 + bt / 2);
+  if (!(f.wins && f.wins.length) && !(f.pass && f.pass.length)) {   // solid wall: fill its body; ends run on into the neighbouring walls (only where that stays inside the house)
+    const Lw = Math.hypot(u1 - u0, v1 - v0), du = (u1 - u0) / Lw, dv = (v1 - v0) / Lw, bt = t - 0.012;
+    const FPp = model.footprint, inFP = (x, y) => { let c = false; for (let i = 0, j = FPp.length - 1; i < FPp.length; j = i++) { const [xi, yi] = FPp[i], [xj, yj] = FPp[j];
+      if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; };
+    const mu = -n[0] * (0.012 + bt / 2), mv = -n[1] * (0.012 + bt / 2);
+    const e0 = inFP(u0 - du * t * 0.5 + mu, v0 - dv * t * 0.5 + mv) ? t : 0.005, e1 = inFP(u1 + du * t * 0.5 + mu, v1 + dv * t * 0.5 + mv) ? t : 0.005;
+    const zb0 = f.floor === 1 ? 0 : 3.5, zb1 = f.floor === 1 ? 3.0 : 6.5;
+    const body = new THREE.Mesh(new THREE.BoxGeometry(Lw + e0 + e1, zb1 - zb0, bt), interiorBody);
+    const cu = (u0 + u1) / 2 + du * (e1 - e0) / 2 + mu, cvv = (v0 + v1) / 2 + dv * (e1 - e0) / 2 + mv;
     body.position.set(cu, (zb0 + zb1) / 2, -cvv); body.rotation.y = Math.atan2(v1 - v0, u1 - u0);
     grp.add(body);
   }
