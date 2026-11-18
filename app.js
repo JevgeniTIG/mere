@@ -171,7 +171,7 @@ for (const f of model.faces) {
       const fh = Math.max(2, 0.055 * sz), zCeil = f.floor === 1 ? 2.985 : 6.48;
       for (const w0 of f.wins) {   // frame = the drawing's own frame; add only a head where the opening runs into the ceiling
         const r = rect(w0); g2.drawImage(img, r[0], r[1], r[2], r[3], r[0], r[1], r[2], r[3]);
-        if (w0[3] > zCeil - 0.02) { const rc = rect([w0[0], w0[1], w0[2], zCeil]); g2.fillStyle = '#fff'; g2.fillRect(rc[0], rc[1], rc[2], fh); }
+        { const rc = rect([w0[0], w0[1], w0[2], Math.min(w0[3], zCeil)]); g2.fillStyle = '#fff'; g2.fillRect(rc[0], rc[1], rc[2], fh); }   // every opening gets a visible head (kept only where glass is below it)
       }
       const mk = c => { const t = new THREE.CanvasTexture(c); t.minFilter = THREE.LinearFilter; t.generateMipmaps = false; return t; };
       outer.alphaMap = mk(cut); outer.needsUpdate = true;
