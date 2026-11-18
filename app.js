@@ -168,10 +168,11 @@ for (const f of model.faces) {
       g1.drawImage(img, 0, 0); g1.fillStyle = '#000'; for (const w of f.wins) g1.fillRect(...rect(w));
       const fr = document.createElement('canvas'); fr.width = W; fr.height = H; const g2 = fr.getContext('2d');
       g2.fillStyle = '#000'; g2.fillRect(0, 0, W, H);
-      const fw = Math.max(2, 0.055 * sx), fh = Math.max(2, 0.055 * sz);
-      const zCeil = f.floor === 1 ? 2.985 : 6.48;
-      for (const w0 of f.wins) { const w = [w0[0], w0[1], w0[2], Math.min(w0[3], zCeil)]; const r = rect(w); g2.drawImage(img, r[0], r[1], r[2], r[3], r[0], r[1], r[2], r[3]);
-        g2.fillStyle = '#fff'; g2.fillRect(r[0], r[1], r[2], fh); g2.fillRect(r[0], r[1] + r[3] - fh, r[2], fh); g2.fillRect(r[0], r[1], fw, r[3]); g2.fillRect(r[0] + r[2] - fw, r[1], fw, r[3]); }
+      const fh = Math.max(2, 0.055 * sz), zCeil = f.floor === 1 ? 2.985 : 6.48;
+      for (const w0 of f.wins) {   // frame = the drawing's own frame; add only a head where the opening runs into the ceiling
+        const r = rect(w0); g2.drawImage(img, r[0], r[1], r[2], r[3], r[0], r[1], r[2], r[3]);
+        if (w0[3] > zCeil - 0.02) { const rc = rect([w0[0], w0[1], w0[2], zCeil]); g2.fillStyle = '#fff'; g2.fillRect(rc[0], rc[1], rc[2], fh); }
+      }
       const mk = c => { const t = new THREE.CanvasTexture(c); t.minFilter = THREE.LinearFilter; t.generateMipmaps = false; return t; };
       outer.alphaMap = mk(cut); outer.needsUpdate = true;
       frameMat.alphaMap = mk(fr); frameMat.needsUpdate = true; mf.visible = true;
