@@ -228,7 +228,7 @@ for (const f of model.faces) {
     const inWall = (x, y) => inFP(x, y) && dEdge(x, y) < 0.43;   // inside a neighbouring outer wall (walls are up to 45 cm), not out in a room
     const pick = sg => { for (const e of [0.43, 0.3, Math.max(0.05, t - 0.02)]) if (inWall((sg < 0 ? u0 : u1) + sg * du * e * 0.75 + mu, (sg < 0 ? v0 : v1) + sg * dv * e * 0.75 + mv)) return e; return 0; };
     const e0 = pick(-1), e1 = pick(1);
-    const zb0 = f.floor === 1 ? 0 : 3.5, zb1 = f.floor === 1 ? 3.0 : 6.5;
+    const zb0 = f.floor === 1 ? Math.min(0, f.z0) : 3.5, zb1 = f.floor === 1 ? 3.0 : 6.5;   // down to the plinth: no open wedge under wall ends at ground level
     const body = new THREE.Mesh(new THREE.BoxGeometry(Lw + e0 + e1, zb1 - zb0, bt), interiorBody);
     const cu = (u0 + u1) / 2 + du * (e1 - e0) / 2 + mu, cvv = (v0 + v1) / 2 + dv * (e1 - e0) / 2 + mv;
     body.position.set(cu, (zb0 + zb1) / 2, -cvv); body.rotation.y = Math.atan2(v1 - v0, u1 - u0);
