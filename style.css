@@ -181,3 +181,36 @@ body.night .sun{display:none!important}
 @media (max-width:820px){.ph-sets{top:8px}.ph-sets button{font-size:12px;padding:5px 10px}.ph-count{top:52px}}
 
 button{touch-action:manipulation}
+
+/* ---------- landing (sale page) ---------- */
+#landing{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;color:#fff;background:#0d0f10 url(assets/landing.jpg) center/cover no-repeat;transition:opacity .6s,visibility .6s;overflow:auto}
+#landing::before{content:'';position:fixed;inset:0;background:linear-gradient(90deg,rgba(8,10,12,.82) 0%,rgba(8,10,12,.55) 48%,rgba(8,10,12,.15) 100%),linear-gradient(0deg,rgba(8,10,12,.55),transparent 45%);pointer-events:none}
+#landing.gone{opacity:0;visibility:hidden;pointer-events:none}
+.ld-top{position:relative;display:flex;align-items:center;justify-content:space-between;padding:18px 26px}
+.ld-langs{display:flex;gap:2px;font-size:12px}
+.ld-langs button{padding:6px 10px;border-radius:999px;color:rgba(255,255,255,.7)}
+.ld-langs button.on{background:rgba(255,255,255,.92);color:#111}
+.ld-in{position:relative;margin:auto 0;padding:4vh 6vw 7vh;max-width:760px}
+.ld-eyebrow{font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:#d9c3a5;margin-bottom:18px}
+.ld-h{font-family:Fraunces,serif;font-weight:300;font-size:clamp(34px,5.2vw,64px);line-height:1.05;margin:0 0 20px}
+.ld-lead{font-size:clamp(15px,1.35vw,18px);line-height:1.6;color:rgba(255,255,255,.86);max-width:600px;margin:0 0 18px}
+.ld-slogan{font-family:Fraunces,serif;font-style:italic;font-size:clamp(19px,1.9vw,25px);color:#f1e3cf;margin:0 0 26px}
+.ld-facts{display:flex;flex-wrap:wrap;gap:10px 26px;margin-bottom:32px}
+.ld-facts div{display:flex;flex-direction:column;gap:3px;padding-left:12px;border-left:1px solid rgba(217,195,165,.55)}
+.ld-facts b{font-weight:500;font-size:15px}
+.ld-facts span{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.6)}
+.ld-cta{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:28px}
+.ld-btn{display:inline-flex;align-items:center;gap:10px;padding:15px 24px;border-radius:999px;font-size:15px;font-weight:500;transition:.2s}
+.ld-btn1{background:#f4efe7;color:#111}.ld-btn1:hover{background:#fff}
+.ld-btn1 i{font-style:normal;transition:transform .2s}.ld-btn1:hover i{transform:translateX(3px)}
+.ld-btn2{border:1px solid rgba(255,255,255,.45);color:#fff;background:rgba(255,255,255,.06);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}.ld-btn2:hover{background:rgba(255,255,255,.16)}
+.ld-contact{font-size:13px;color:rgba(255,255,255,.7)}.ld-contact b{color:#fff;font-weight:500}.ld-contact a{color:#fff}
+body.on-landing #loader{visibility:hidden}
+header#top .brand-sm{cursor:pointer}
+@media (max-width:820px){
+  #landing{background-image:url(assets/landing_m.jpg)}
+  #landing::before{background:linear-gradient(0deg,rgba(8,10,12,.88) 0%,rgba(8,10,12,.7) 55%,rgba(8,10,12,.35) 100%)}
+  .ld-top{padding:12px 14px}.ld-in{padding:2vh 22px 5vh}
+  .ld-cta{flex-direction:column;align-items:stretch}.ld-btn{justify-content:center}
+  .ld-facts{gap:10px 18px}
+}

@@ -742,7 +742,7 @@ $$('#g-cut button').forEach(b => b.onclick = () => setCut(+b.dataset.cut));
 function applyLang(l) {
   LANG = l; document.documentElement.lang = l;
   $$('[data-i18n]').forEach(e => { const v = T[l][e.dataset.i18n]; if (v !== undefined) e.innerHTML = v; });
-  $$('#langs button').forEach(b => b.classList.toggle('on', b.dataset.lang === l));
+  $$('#langs button').forEach(b => b.classList.toggle('on', b.dataset.lang === l)); if (window.__landingLang) window.__landingLang(l);
   buildPlan(planFloor); if (mode === 'walk') updateRoom(true);
   if (window.__galleryLang) window.__galleryLang();
 }
@@ -1025,7 +1025,10 @@ addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; cam
 const clock = new THREE.Clock();
 camera.position.copy(toWorld(-60, -70, 46)); controls.target.copy(toWorld(10, 12, 2)); camera.lookAt(controls.target);
 fly(toWorld(-30, -34, 22), toWorld(10, 12, 2), 4);
+let lastLandingFrame = 0;
 function loop() {
+  // under the sale landing page: keep loading, but draw only an occasional frame (warms shaders, spares phones)
+  if (document.body.classList.contains('on-landing')) { const t = performance.now(); if (t - lastLandingFrame < 1500) { requestAnimationFrame(loop); return; } lastLandingFrame = t; }
   const dt = Math.min(clock.getDelta(), 0.05);
   stepFly(dt); stepTour(dt); stepWalk(dt); updateMini(); if (window.__water) window.__water(dt);
   if (!touring && !flyAnim && controls.enabled) controls.update();
@@ -1039,3 +1042,10 @@ mgr.onLoad = () => { $('#loader').style.opacity = 0; setTimeout(() => $('#loader
 applyLang(LANG);
 loop();
 window.__app = { blocked: (u, v, l) => blocked(u, v, l), floorAt: (u, v, l) => floorAt(u, v, l), collide, setNight, tourAt: t => { flyAnim = null; if (!touring) startTour(); tourT = t; stepTour(0.0001); }, stopFly: () => { flyAnim = null; }, view: (p, l) => { flyAnim = null; camera.position.copy(toWorld(...p)); controls.target.copy(toWorld(...l)); camera.lookAt(controls.target); }, camera, scene, setMode, startTour, toWorld, walker, placeWalker, setCut, setSun, controls, renderer };
+
+// ---------- sale landing page (index.html) hooks ----------
+window.__setMode = m => setMode(m);
+window.__applyLang = l => applyLang(l);
+if (window.__pendingLang && window.__pendingLang !== LANG) applyLang(window.__pendingLang);
+if (window.__pendingMode) setMode(window.__pendingMode);
+$('header#top .brand-sm').onclick = () => { if (touring) stopTour(); if (window.__showLanding) window.__showLanding(); };

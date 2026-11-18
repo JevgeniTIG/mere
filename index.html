@@ -3,13 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>MERE 44 — kaasaegne eramu mere ääres · Tammneeme</title>
-<meta name="description" content="Interaktiivne 3D-visualiseering: kaasaegne üksikelamu Tammneemes, Viimsi vallas. 3D tour of a modern seaside home in Tammneeme, Estonia.">
+<title>MERE 44 — merevaatega krunt müüa · Tammneeme, Viimsi</title>
+<meta name="description" content="Müüa merevaatega elamukrunt Tammneemes (1594 m²) — kehtiv detailplaneering, ehitusprojekt ja ehitusluba. Sea-view building plot for sale near Tallinn, Estonia.">
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%226%22 fill=%22%23111%22/%3E%3Ctext x=%2216%22 y=%2222%22 font-size=%2216%22 text-anchor=%22middle%22 fill=%22%23d9c3a5%22 font-family=%22serif%22%3EM%3C/text%3E%3C/svg%3E">
+<link rel="preload" as="image" href="assets/landing.jpg" media="(min-width:821px)">
+<link rel="preload" as="image" href="assets/landing_m.jpg" media="(max-width:820px)">
 <link rel="stylesheet" href="style.css">
 <script type="importmap">
 { "imports": {
@@ -20,6 +22,69 @@
 </head>
 <body>
 <canvas id="c"></canvas>
+<section id="landing" aria-label="MERE 44">
+  <div class="ld-top">
+    <div class="brand-sm">MERE 44</div>
+    <div class="ld-langs"><button data-l="et">ET</button><button data-l="en">EN</button><button data-l="ru">RU</button></div>
+  </div>
+  <div class="ld-in">
+    <div class="ld-eyebrow" data-ld="eyebrow"></div>
+    <h1 class="ld-h" data-ld="h"></h1>
+    <p class="ld-lead" data-ld="lead"></p>
+    <p class="ld-slogan" data-ld="slogan"></p>
+    <div class="ld-facts" id="ldFacts"></div>
+    <div class="ld-cta">
+      <button id="ldToday" class="ld-btn ld-btn2"><span data-ld="b1"></span></button>
+      <button id="ldBuild" class="ld-btn ld-btn1"><span data-ld="b2"></span><i>→</i></button>
+    </div>
+    <div class="ld-contact"><span data-ld="contact"></span> <b data-ld="person"></b><span id="ldReach"></span></div>
+  </div>
+</section>
+<script>
+(() => {
+  const C = { phone: '', email: '' };   // Mihhail Murnikov — fill in when known
+  const L = {
+    et: { eyebrow: 'Müüa · Mereääre tee 44, Tammneeme', h: 'Üks viimaseid merevaatega krunte Tallinna külje all',
+      lead: '1594 m² elamumaad Viimsi poolsaarel, meri kohe üle tee. Kehtiv detailplaneering, valmis ehitusprojekt ja ehitusluba kaasaegsele A-energiaklassi eramule.',
+      slogan: 'Load olemas — ehitama võib hakata kasvõi homme.',
+      facts: [['1594 m²', 'krunt'], ['Elamumaa', '100%'], ['Detailplaneering', 'kehtib'], ['Ehitusprojekt', 'valmis'], ['Ehitusluba', 'olemas']],
+      b1: 'Vaata krunti täna', b2: 'Vaata, mis siia ehitada saab', contact: 'Info ja näitamine:', person: 'Mihhail Murnikov',
+      title: 'MERE 44 — merevaatega krunt müüa · Tammneeme, Viimsi' },
+    en: { eyebrow: 'For sale · Mereääre tee 44, Tammneeme', h: 'One of the last sea-view plots on Tallinn’s doorstep',
+      lead: '1,594 m² of residential land on the Viimsi peninsula, with the sea just across the road. A valid detailed plan, a finished building design and a building permit for a modern A-class energy home.',
+      slogan: 'Permits in place — you could start building tomorrow.',
+      facts: [['1,594 m²', 'plot'], ['Residential', '100%'], ['Detailed plan', 'in force'], ['Building design', 'ready'], ['Building permit', 'granted']],
+      b1: 'See the plot today', b2: 'See what you can build here', contact: 'Viewings & info:', person: 'Mikhail Murnikov',
+      title: 'MERE 44 — sea-view plot for sale · Tammneeme, Viimsi' },
+    ru: { eyebrow: 'Продаётся · Mereääre tee 44, Таммнеэме', h: 'Один из последних участков с видом на море у самого Таллина',
+      lead: '1594 м² земли под жильё на полуострове Виймси, море прямо через дорогу. Действующая детальная планировка, готовый строительный проект и разрешение на строительство современного дома энергокласса A.',
+      slogan: 'Все разрешения есть — строить можно хоть завтра.',
+      facts: [['1594 м²', 'участок'], ['Под жильё', '100%'], ['Детпланировка', 'действует'], ['Проект', 'готов'], ['Разрешение', 'получено']],
+      b1: 'Участок сегодня', b2: 'Что здесь можно построить', contact: 'Показ и информация:', person: 'Михаил Мурников',
+      title: 'MERE 44 — участок с видом на море · Таммнеэме, Виймси' } };
+  const $ = s => document.querySelector(s), el = $('#landing');
+  const q = new URLSearchParams(location.search).get('lang');
+  let lang = L[q] ? q : 'et';
+  function setL(l, fromApp) {
+    lang = l; const t = L[l];
+    el.querySelectorAll('[data-ld]').forEach(e => e.textContent = t[e.dataset.ld]);
+    $('#ldFacts').innerHTML = t.facts.map(([a, b]) => `<div><b>${a}</b><span>${b}</span></div>`).join('');
+    $('#ldReach').innerHTML = (C.phone ? ` · <a href="tel:${C.phone.replace(/\s/g, '')}">${C.phone}</a>` : '') + (C.email ? ` · <a href="mailto:${C.email}">${C.email}</a>` : '');
+    el.querySelectorAll('.ld-langs button').forEach(b => b.classList.toggle('on', b.dataset.l === l));
+    if (!el.classList.contains('gone')) document.title = t.title;
+    if (!fromApp) { if (window.__applyLang) window.__applyLang(l); else window.__pendingLang = l; }
+  }
+  window.__landingLang = l => setL(l, true);
+  el.querySelectorAll('.ld-langs button').forEach(b => b.onclick = () => setL(b.dataset.l));
+  const go = m => { el.classList.add('gone'); document.body.classList.remove('on-landing'); document.title = 'MERE 44 — ' + L[lang].h;
+    if (window.__setMode) window.__setMode(m); else window.__pendingMode = m; };
+  $('#ldToday').onclick = () => go('photo');
+  $('#ldBuild').onclick = () => go('tour');
+  window.__showLanding = () => { el.classList.remove('gone'); document.body.classList.add('on-landing'); document.title = L[lang].title; };
+  document.body.classList.add('on-landing');
+  setL(lang, true); if (lang !== 'et') window.__pendingLang = lang;
+})();
+</script>
 
 <div id="loader"><div class="lw"><div class="brand">MERE 44</div><div class="bar"><i id="lbar"></i></div><div id="ltext" class="small">…</div></div></div>
 
