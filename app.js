@@ -158,13 +158,22 @@ for (const f of model.faces) {
   const zi0 = f.floor === 1 ? 0 : 3.5, zi1 = f.floor === 1 ? 3.0 : 6.5;
   const fz = z => (z - f.z0) / (f.z1 - f.z0);
   const imap = tex(`assets/i_${f.name}.png`);
-  const inner = new THREE.MeshStandardMaterial({ color: 0xf6f3ee, map: imap, roughness: 0.9, alphaMap: am, alphaTest: 0.5 }); interiorMats.push(inner);
+  // inner wall face: cut the whole opening (glass + frame) so the frame is seen once, on the outer plane — not doubled on the inside
+  let iam = am;
+  if (f.wins && f.wins.length) {
+    const PX = 40, Lf = Math.hypot(u1 - u0, v1 - v0), c = document.createElement('canvas');
+    c.width = Math.max(8, Math.ceil(Lf * PX)); c.height = Math.max(8, Math.ceil((f.z1 - f.z0) * PX));
+    const g2 = c.getContext('2d'); g2.fillStyle = '#fff'; g2.fillRect(0, 0, c.width, c.height); g2.fillStyle = '#000';
+    for (const [a, b, za, zb] of f.wins) g2.fillRect(a * PX, (f.z1 - zb) * PX, (b - a) * PX, (zb - za) * PX);
+    iam = new THREE.CanvasTexture(c); iam.minFilter = THREE.LinearFilter; iam.generateMipmaps = false;
+  }
+  const inner = new THREE.MeshStandardMaterial({ color: 0xf6f3ee, map: imap, roughness: 0.9, alphaMap: iam, alphaTest: 0.5 }); interiorMats.push(inner);
   const gi = quad(P(iu0, iv0, zi0), P(iu1, iv1, zi0), P(iu1, iv1, zi1), P(iu0, iv0, zi1), nW.clone().negate(), [0, fz(zi0), 1, fz(zi0), 1, fz(zi1), 0, fz(zi1)]);
   const mi = new THREE.Mesh(gi, inner); mi.receiveShadow = true; mi.castShadow = true; grp.add(mi);
   // reveal caps (top and sides of the wall body) — thin dark frames read as window depth
   if (f.glass) {
     const gm = tex(`assets/g_${f.name}.png`, false); gm.minFilter = THREE.LinearFilter; gm.generateMipmaps = false;
-    const gu0 = u0 - n[0] * 0.16, gv0 = v0 - n[1] * 0.16, gu1 = u1 - n[0] * 0.16, gv1 = v1 - n[1] * 0.16;
+    const gu0 = u0 - n[0] * 0.05, gv0 = v0 - n[1] * 0.05, gu1 = u1 - n[0] * 0.05, gv1 = v1 - n[1] * 0.05;   // glass sits in the frame plane
     const gl = new THREE.MeshPhysicalMaterial({ color: 0xa9bcc2, roughness: 0.02, metalness: 0.05, transparent: true, opacity: 0.2, alphaMap: gm, depthWrite: false, side: THREE.DoubleSide, envMapIntensity: 0.55 });
     const gg = quad(P(gu0, gv0, f.z0), P(gu1, gv1, f.z0), P(gu1, gv1, f.z1), P(gu0, gv0, f.z1), nW);
     const mg = new THREE.Mesh(gg, gl); mg.renderOrder = 2; grp.add(mg);
@@ -200,7 +209,7 @@ groups.ground.add(flat(EF1, 0.012, M.oak));
 // intermediate slab (floor 2 + balconies + carport roof)
 const midSlab = slab(FP, 3.0, 3.5, M.white, [stairHole.slice().reverse()]);
 groups.up.add(midSlab);
-groups.up.add(flat(FP, 3.512, M.deck, [EF2.slice().reverse()]));
+for (const d of (model.deck2 || [])) groups.up.add(flat(d.map(([u, v]) => [u, v]), 3.512, M.deck));   // footprint minus upper floor, precomputed (FP-with-hole triangulated a wedge over the terrace)
 groups.up.add(flat(EF2, 3.515, M.oak, [stairHole.slice().reverse()]));
 // ground-floor ceiling (visible when upper floor hidden? no — only from inside)
 const ceil1 = flat(EF1, 2.985, M.ceiling); ceil1.rotation.x = 0; ceil1.geometry.scale(1, 1, 1); ceil1.material = M.ceiling; ceil1.material.side = THREE.BackSide; groups.up.add(ceil1);
@@ -291,6 +300,7 @@ const gm = model.ground;
 for (const p of model.terr) groups.site.add(slab(p, -0.3, p[0][1] < -3.5 && p.length === 4 ? -0.15 : -0.02, M.deck));
 for (const p of model.band) groups.site.add(slab(p, -0.3, -0.25, M.slab));
 for (const p of model.paving) groups.site.add(slab(p, -0.3, -0.272, M.paver));
+for (const p of (model.covered || [])) groups.site.add(slab(p, -0.3, -0.274, M.paver));   // porch + carport floor under the upper storey
 // fence: street sides (NE, SE) vertical metal ribs h=1.5; other sides mesh fence
 { const pl = model.plot, gs = [], ms = [];
   const ribTex = (rib, col) => { const c = document.createElement('canvas'); c.width = 64; c.height = 8; const g = c.getContext('2d'); g.clearRect(0, 0, 64, 8); g.fillStyle = col; g.fillRect(0, 0, Math.round(64 * rib), 8); const t = new THREE.CanvasTexture(c); t.wrapS = THREE.RepeatWrapping; t.anisotropy = aniso; t.colorSpace = THREE.SRGBColorSpace; return t; };
@@ -636,6 +646,7 @@ function applyLang(l) {
   $$('[data-i18n]').forEach(e => { const v = T[l][e.dataset.i18n]; if (v !== undefined) e.innerHTML = v; });
   $$('#langs button').forEach(b => b.classList.toggle('on', b.dataset.lang === l));
   buildPlan(planFloor); if (mode === 'walk') updateRoom(true);
+  if (window.__galleryLang) window.__galleryLang();
 }
 $$('#langs button').forEach(b => b.onclick = () => applyLang(b.dataset.lang));
 
