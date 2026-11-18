@@ -207,11 +207,15 @@ for (const f of model.faces) {
     }));
   }
   if (!(f.wins && f.wins.length) && !(f.pass && f.pass.length)) {   // solid wall: fill its body; ends run on into the neighbouring walls (only where that stays inside the house)
-    const Lw = Math.hypot(u1 - u0, v1 - v0), du = (u1 - u0) / Lw, dv = (v1 - v0) / Lw, bt = t - 0.012;
+    const Lw = Math.hypot(u1 - u0, v1 - v0), du = (u1 - u0) / Lw, dv = (v1 - v0) / Lw, bt = t - 0.024;
     const FPp = model.footprint, inFP = (x, y) => { let c = false; for (let i = 0, j = FPp.length - 1; i < FPp.length; j = i++) { const [xi, yi] = FPp[i], [xj, yj] = FPp[j];
       if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; };
     const mu = -n[0] * (0.012 + bt / 2), mv = -n[1] * (0.012 + bt / 2);
-    const e0 = inFP(u0 - du * t * 0.5 + mu, v0 - dv * t * 0.5 + mv) ? t : 0.005, e1 = inFP(u1 + du * t * 0.5 + mu, v1 + dv * t * 0.5 + mv) ? t : 0.005;
+    const dEdge = (x, y) => { let d = 1e9; for (let i = 0, j = FPp.length - 1; i < FPp.length; j = i++) { const [ax, ay] = FPp[j], [bx, by] = FPp[i], ex = bx - ax, ey = by - ay;
+      const k = Math.max(0, Math.min(1, ((x - ax) * ex + (y - ay) * ey) / (ex * ex + ey * ey))); d = Math.min(d, Math.hypot(x - ax - k * ex, y - ay - k * ey)); } return d; };
+    const inWall = (x, y) => inFP(x, y) && dEdge(x, y) < t * 0.9;   // inside another wall's thickness, not out in a room
+    const ext = t - 0.02;
+    const e0 = inWall(u0 - du * ext * 0.5 + mu, v0 - dv * ext * 0.5 + mv) ? ext : 0, e1 = inWall(u1 + du * ext * 0.5 + mu, v1 + dv * ext * 0.5 + mv) ? ext : 0;
     const zb0 = f.floor === 1 ? 0 : 3.5, zb1 = f.floor === 1 ? 3.0 : 6.5;
     const body = new THREE.Mesh(new THREE.BoxGeometry(Lw + e0 + e1, zb1 - zb0, bt), interiorBody);
     const cu = (u0 + u1) / 2 + du * (e1 - e0) / 2 + mu, cvv = (v0 + v1) / 2 + dv * (e1 - e0) / 2 + mv;
@@ -242,11 +246,11 @@ for (const f of model.faces) {
 }
 
 // ---------- reveals: openings get real depth instead of paper-thin cut-outs ----------
-{ const gs = [];
+{ const gs = [], thr = { 1: [], 2: [] };
   for (const f of model.faces) { if (!f.wins || !f.wins.length) continue;
     const [u0, v0] = f.p0, [u1, v1] = f.p1, n = f.n, t = f.t; const L = Math.hypot(u1 - u0, v1 - v0), tu = (u1 - u0) / L, tv = (v1 - v0) / L;
     const ws = [...f.wins].sort((a, b) => a[0] - b[0]); const ops = [];
-    for (const w of ws) { const o = ops[ops.length - 1]; if (o && w[0] - o[1] < 0.15 && Math.abs(w[2] - o[2]) < 0.3 && Math.abs(w[3] - o[3]) < 0.3) { o[1] = Math.max(o[1], w[1]); o[2] = Math.min(o[2], w[2]); o[3] = Math.max(o[3], w[3]); } else ops.push([...w]); }
+    for (const w of ws) { const o = ops[ops.length - 1]; if (o && (w[0] < o[1] - 0.02 || (w[0] - o[1] < 0.15 && Math.abs(w[2] - o[2]) < 0.3 && Math.abs(w[3] - o[3]) < 0.3))) { o[1] = Math.max(o[1], w[1]); o[2] = Math.min(o[2], w[2]); o[3] = Math.max(o[3], w[3]); } else ops.push([...w]); }
     const zf = f.floor === 1 ? 0 : 3.5, zc = f.floor === 1 ? 3.0 : 6.5;
     const at = (s, d) => [u0 + tu * s - n[0] * d, v0 + tv * s - n[1] * d];
     for (let [a, b, z0, z1] of ops) { a = Math.max(0, a); b = Math.min(L, b); z0 = Math.max(zf, z0); z1 = Math.min(zc, z1);
@@ -255,8 +259,20 @@ for (const f of model.faces) {
       gs.push(quad(P(...A0, z0), P(...A1, z0), P(...A1, z1), P(...A0, z1), nw(tu, tv)));
       gs.push(quad(P(...B0, z0), P(...B1, z0), P(...B1, z1), P(...B0, z1), nw(-tu, -tv)));
       if (z1 < zc - 0.03) gs.push(quad(P(...A0, z1), P(...B0, z1), P(...B1, z1), P(...A1, z1), new THREE.Vector3(0, -1, 0)));
-      if (z0 > zf + 0.05) gs.push(quad(P(...A0, z0), P(...B0, z0), P(...B1, z0), P(...A1, z0), new THREE.Vector3(0, 1, 0))); } }
-  if (gs.length) { const m = new THREE.Mesh(mergeGeometries(gs), new THREE.MeshStandardMaterial({ color: 0xeceae5, roughness: 0.8, side: THREE.DoubleSide })); m.castShadow = m.receiveShadow = true; groups.ground.add(m); }
+      if (z0 > zf + 0.05) gs.push(quad(P(...A0, z0), P(...B0, z0), P(...B1, z0), P(...A1, z0), new THREE.Vector3(0, 1, 0)));
+      else thr[f.floor === 1 ? 1 : 2].push(quad(P(...A0, zf + 0.012), P(...B0, zf + 0.012), P(...B1, zf + 0.012), P(...A1, zf + 0.012), new THREE.Vector3(0, 1, 0))); } }   // door threshold: floor runs out to the glass
+  for (const k of [1, 2]) if (thr[k].length) { const m = new THREE.Mesh(mergeGeometries(thr[k]), M.oak); m.receiveShadow = true; groups[k === 1 ? 'ground' : 'up'].add(m); }
+  if (gs.length) { const rm = new THREE.MeshStandardMaterial({ color: 0xf3f0eb, roughness: 0.9, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2 }); interiorMats.push(rm);   // same plaster as the inner skin, drawn on top: corner jambs that share a plane with the next wall no longer flicker
+    const m = new THREE.Mesh(mergeGeometries(gs), rm); m.castShadow = m.receiveShadow = true; groups.ground.add(m); }
+}
+// ---------- fireplace (AR-5-01 "Kamin"): fills the recess where the east wall thickens, room wall stays straight ----------
+{ const u0 = 15.55, u1 = 16.16, v0 = 5.20, v1 = 6.72, h = 2.985;
+  const b = new THREE.Mesh(new THREE.BoxGeometry(u1 - u0, h, v1 - v0), new THREE.MeshStandardMaterial({ color: 0xf3f0eb, roughness: 0.9 }));
+  b.position.set((u0 + u1) / 2, h / 2, -(v0 + v1) / 2); b.castShadow = b.receiveShadow = true; groups.ground.add(b);
+  const fire = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.55), new THREE.MeshStandardMaterial({ color: 0x0b0b0c, roughness: 0.15, metalness: 0.3, emissive: 0x000000 }));
+  fire.position.set(u0 - 0.004, 0.75, -(v0 + v1) / 2); fire.rotation.y = -Math.PI / 2; groups.ground.add(fire);
+  interiorMats.push(fire.material);   // glows at night with the other interior surfaces
+  collide[1].push([u0, v0, u0, v1], [u0, v1, u1, v1]);
 }
 // ---------- slabs, floors, roof ----------
 const EF1 = model.ef1, EF2 = model.ef2, FP = model.footprint, st = model.stair;
