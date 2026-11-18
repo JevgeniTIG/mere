@@ -685,8 +685,9 @@ night.hg = new THREE.Group(); house.add(night.hg); night.hg.visible = false;
   night.warm.push([lensM, 3.0]);
   const pts = [];
   const nearHouse = (u, v) => model.faces.some(f => { const [a, b] = f.p0, [c, d] = f.p1; const dx = c - a, dy = d - b, L2 = dx * dx + dy * dy; let t = ((u - a) * dx + (v - b) * dy) / L2; t = Math.max(0, Math.min(1, t)); return Math.hypot(a + t * dx - u, b + t * dy - v) < 0.9; });
+  const nearFence = (u, v) => model.plot.some((pa, i) => { const pb = model.plot[(i + 1) % model.plot.length], dx = pb[0] - pa[0], dy = pb[1] - pa[1], L2 = dx * dx + dy * dy; let t = ((u - pa[0]) * dx + (v - pa[1]) * dy) / L2; t = Math.max(0, Math.min(1, t)); return Math.hypot(pa[0] + t * dx - u, pa[1] + t * dy - v) < 2.0; });   // no lamps on the fence/gate line
   const walk = (poly, step, off) => { let acc = step / 2; for (let i = 0; i < poly.length; i++) { const [a, b] = poly[i], [c, d] = poly[(i + 1) % poly.length]; const L = Math.hypot(c - a, d - b); if (L < 1.2) { acc += L; continue; } const tu = (c - a) / L, tv = (d - b) / L;
-      while (acc < L) { const u = a + tu * acc - tv * off, v = b + tv * acc + tu * off; if (!inPoly([u, v], EF1) && !nearHouse(u, v) && !pts.some(p => Math.hypot(p[0] - u, p[1] - v) < 3.2)) pts.push([u, v]); acc += step; } acc -= L; } };
+      while (acc < L) { const u = a + tu * acc - tv * off, v = b + tv * acc + tu * off; if (!inPoly([u, v], EF1) && !nearHouse(u, v) && !nearFence(u, v) && Math.hypot(u - 7.2, v - 12.6) > 3.0 && !pts.some(p => Math.hypot(p[0] - u, p[1] - v) < 3.2)) pts.push([u, v]); acc += step; } acc -= L; } };
   model.band.forEach(p => walk(p, 5.0, -0.25));
   model.paving.forEach(p => walk(p, 5.5, -0.25));
   window.__bollards = pts.slice(0, 18); for (const [u, v] of pts.slice(0, 18)) {
@@ -695,8 +696,8 @@ night.hg = new THREE.Group(); house.add(night.hg); night.hg.visible = false;
     const pool = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 4.2).rotateX(-Math.PI / 2), poolM); pool.position.copy(toWorld(u, v, -0.2)); pool.renderOrder = 4; night.group.add(pool);
   }
   // LED line under each slab edge + soft wash fading down the facade
-  const ledM = new THREE.MeshStandardMaterial({ color: 0x111111, emissive: 0xffd6a0, emissiveIntensity: 0, toneMapped: false }); night.warm.push([ledM, 2.4]);
-  const washT = (() => { const c = document.createElement('canvas'); c.width = 64; c.height = 128; const g = c.getContext('2d'); const gr = g.createLinearGradient(0, 0, 0, 128); gr.addColorStop(0, 'rgba(255,200,140,0.75)'); gr.addColorStop(0.25, 'rgba(255,190,130,0.28)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 128); const h = g.createLinearGradient(0, 0, 64, 0); h.addColorStop(0, 'rgba(0,0,0,1)'); h.addColorStop(0.08, 'rgba(0,0,0,0)'); h.addColorStop(0.92, 'rgba(0,0,0,0)'); h.addColorStop(1, 'rgba(0,0,0,1)'); g.globalCompositeOperation = 'destination-out'; g.fillStyle = h; g.fillRect(0, 0, 64, 128); return new THREE.CanvasTexture(c); })();
+  const ledM = new THREE.MeshStandardMaterial({ color: 0x111111, emissive: 0xffd6a0, emissiveIntensity: 0, toneMapped: false }); night.warm.push([ledM, 1.3]);
+  const washT = (() => { const c = document.createElement('canvas'); c.width = 64; c.height = 128; const g = c.getContext('2d'); const gr = g.createLinearGradient(0, 0, 0, 128); gr.addColorStop(0, 'rgba(255,200,140,0.38)'); gr.addColorStop(0.25, 'rgba(255,190,130,0.12)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 128); const h = g.createLinearGradient(0, 0, 64, 0); h.addColorStop(0, 'rgba(0,0,0,1)'); h.addColorStop(0.08, 'rgba(0,0,0,0)'); h.addColorStop(0.92, 'rgba(0,0,0,0)'); h.addColorStop(1, 'rgba(0,0,0,1)'); g.globalCompositeOperation = 'destination-out'; g.fillStyle = h; g.fillRect(0, 0, 64, 128); return new THREE.CanvasTexture(c); })();
   const washM = new THREE.MeshBasicMaterial({ map: washT, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
   for (const f of model.faces) { const [u0, v0] = f.p0, [u1, v1] = f.p1; const L = Math.hypot(u1 - u0, v1 - v0); if (L < 1.4 || f.name === 'g7' || f.name === 'g9') continue;
     const zt = f.floor === 1 ? 2.97 : 6.47, n = f.n, mu = (u0 + u1) / 2 + n[0] * 0.04, mv = (v0 + v1) / 2 + n[1] * 0.04, ang = Math.atan2(v1 - v0, u1 - u0);
