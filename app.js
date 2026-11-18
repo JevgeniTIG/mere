@@ -420,8 +420,28 @@ furn(11.6, 9.4, 12.4, 11.95, 0, 0.92, M.dark); furn(14.35, 9.75, 15.55, 12.25, 0
 furn(9.78, 10.0, 10.36, 11.8, 0, 2.3, M.white);
 // beds
 furn(0.6, 10.4, 2.6, 12.5, 0, 0.5); furn(14.4, 9.0, 16.2, 11.0, 3.5, 0.5); furn(1.2, 8.6, 3.2, 10.6, 3.5, 0.5);
-// sauna lounge sofa
-furn(3.2, 0.3, 4.2, 2.4, 0, 0.42);
+// sauna (1-12) and its lounge (1-10), from AR-5-01: L-shaped upper bench, lower step, round electric heater,
+// glass wall with a glass door to the lounge, wooden lining and a lowered wooden ceiling
+{ const wood = new THREE.MeshStandardMaterial({ color: 0xd8b98c, roughness: 0.8 }), woodD = new THREE.MeshStandardMaterial({ color: 0xc9a473, roughness: 0.8 });
+  const glassS = new THREE.MeshStandardMaterial({ color: 0xdfe8ea, roughness: 0.05, metalness: 0.1, transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide });
+  const cyl = (u, v, rx, rv, z0, h, mat, seg = 28) => { const g = new THREE.CylinderGeometry(1, 1, h, seg); g.scale(rx, 1, rv); g.translate(u, z0 + h / 2, -v); const m = new THREE.Mesh(g, mat); m.castShadow = true; groups.furn.add(m); return m; };
+  // benches
+  furn(0.03, 1.82, 1.97, 2.37, 0, 1.0, wood); furn(0.03, 0.09, 1.02, 1.82, 0, 1.0, wood);
+  furn(1.02, 1.42, 1.97, 1.82, 0, 0.5, woodD); furn(1.02, 0.95, 1.38, 1.42, 0, 0.5, woodD);
+  // heater with stones
+  cyl(1.6, 0.39, 0.27, 0.27, 0, 0.62, M.dark); cyl(1.6, 0.39, 0.25, 0.25, 0.62, 0.16, new THREE.MeshStandardMaterial({ color: 0x8d8a86, roughness: 0.95 }), 10);
+  // lining + lowered ceiling
+  furn(0.0, 0.05, 0.03, 2.37, 0, 2.3, wood); furn(0.0, 2.37, 1.99, 2.4, 0, 2.3, wood); furn(0.0, 0.02, 1.0, 0.05, 0, 2.3, wood);
+  furn(0.0, 0.02, 1.99, 2.4, 2.3, 0.03, wood);
+  // glass wall + door to the lounge, black frame, bulkhead above
+  groups.furn.add(box(1.99, 0.09, 2.01, 2.4, 0.0, 2.3, glassS));
+  for (const v of [0.09, 0.68, 1.46, 2.38]) furn(1.985, v - 0.01, 2.015, v + 0.01, 0, 2.3, M.black);
+  furn(1.985, 0.09, 2.015, 2.4, 2.28, 0.03, M.black); furn(1.98, 0.02, 2.03, 2.4, 2.3, 0.7, M.white);
+  // lounge: four tub armchairs around an oval table, kitchenette (KK) along the back wall
+  for (const [u, v] of [[3.03, 2.1], [5.5, 2.34], [3.74, 0.79], [5.04, 0.93]]) { cyl(u, v, 0.4, 0.4, 0, 0.42, M.soft); cyl(u, v, 0.42, 0.42, 0.42, 0.3, M.soft); }
+  cyl(4.27, 2.06, 0.3, 0.48, 0, 0.42, M.oak, 40);
+  furn(2.05, 3.55, 4.59, 4.12, 0, 0.88, M.white); furn(2.05, 3.53, 4.59, 4.12, 0.88, 0.04, M.oak);
+}
 groups.furn.children.forEach(m => { m.castShadow = true; });
 
 // ---------- surroundings: sea, trees (nDSM), neighbour buildings ----------
@@ -921,6 +941,12 @@ function planMarkup(fl, mini) {
     for (const [a, b] of segs) { if (a - s > 0.01) h += q(s, a, '#1d1d1d'); if (b > a) { h += q(a, b, '#bfd6de'); const A = [u0 + tu * a - nu * t / 2, v0 + tv * a - nv * t / 2], B = [u0 + tu * b - nu * t / 2, v0 + tv * b - nv * t / 2]; h += `<line x1="${A[0]}" y1="${-A[1]}" x2="${B[0]}" y2="${-B[1]}" stroke="#4d6a75" stroke-width="0.04"/>`; } s = b; }
   }
   (fl === 1 ? model.iw1 : model.iw2).forEach(r => h += `<rect x="${r[0]}" y="${-r[3]}" width="${r[2] - r[0]}" height="${r[3] - r[1]}" fill="#1d1d1d"/>`);
+  if (fl === 1 && !mini) {   // sauna: benches, heater, glass wall to the lounge
+    const R = (u0, v0, u1, v1, c) => `<rect x="${u0}" y="${-v1}" width="${u1 - u0}" height="${v1 - v0}" fill="${c}" stroke="#a88a62" stroke-width="0.02"/>`;
+    h += R(0.03, 1.82, 1.97, 2.37, '#e6d3b3') + R(0.03, 0.09, 1.02, 1.82, '#e6d3b3') + R(1.02, 1.42, 1.97, 1.82, '#efe2cb') + R(1.02, 0.95, 1.38, 1.42, '#efe2cb');
+    h += `<circle cx="1.6" cy="-0.39" r="0.27" fill="#6d6863" stroke="#3d3a37" stroke-width="0.03"/>`;
+    h += `<rect x="1.98" y="-2.4" width="0.04" height="2.31" fill="#bfd6de"/><line x1="2.0" y1="-0.68" x2="2.0" y2="-1.46" stroke="#fbfaf7" stroke-width="0.05"/>`;
+  }
   // stairs (as drawn in AR-5-01/02)
   for (let k = 0; k <= 10; k++) h += `<line x1="${st.u0}" y1="${-(st.v1 - k * st.g)}" x2="${st.um}" y2="${-(st.v1 - k * st.g)}" stroke="#9a948c" stroke-width="0.025"/>`;
   for (let k = 0; k <= 9; k++) h += `<line x1="${st.um}" y1="${-(st.vl + k * st.g)}" x2="${st.u1}" y2="${-(st.vl + k * st.g)}" stroke="#9a948c" stroke-width="0.025"/>`;
