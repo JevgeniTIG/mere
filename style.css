@@ -99,7 +99,11 @@ dt{color:var(--mut)}dd{text-align:right}
 .ph-note{position:absolute;left:20px;top:76px}
 @media (max-width:820px){
   header#top{flex-wrap:wrap;gap:8px;padding:10px 12px}
-  #modes{order:3;width:100%;overflow:auto;justify-content:flex-start}
+  #modes{order:3;width:100%;overflow-x:auto;overflow-y:hidden;justify-content:flex-start;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+  #modes::-webkit-scrollbar{display:none}
+  #modes button{flex:0 0 auto}
+  #modes::after{content:'';flex:0 0 6px}
+  .nightbtn{margin-left:auto}
   #modes button{padding:7px 11px;font-size:13px}
   #hero{padding:0 4vw 6vh;width:100%}
   .hero-in{padding:20px 20px 22px}
@@ -175,3 +179,5 @@ body.night .sun{display:none!important}
 .ph-sets button{border:0;background:transparent;color:#fff;font:inherit;font-size:13px;padding:6px 14px;border-radius:999px;cursor:pointer;opacity:.8}
 .ph-sets button.on{background:#fff;color:#111;opacity:1}
 @media (max-width:820px){.ph-sets{top:8px}.ph-sets button{font-size:12px;padding:5px 10px}.ph-count{top:52px}}
+
+button{touch-action:manipulation}

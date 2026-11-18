@@ -705,7 +705,7 @@ night.hg = new THREE.Group(); house.add(night.hg); night.hg.visible = false;
     const hh = f.floor === 1 ? 3.25 : 2.95; const w = new THREE.Mesh(new THREE.PlaneGeometry(L - 0.1, hh), washM); w.position.copy(P((u0 + u1) / 2 + n[0] * 0.03, (v0 + v1) / 2 + n[1] * 0.03, zt - hh / 2)); w.rotation.y = ang; w.renderOrder = 5; night.hg.add(w); }
   // warm room light spilling onto the terrace (3 real lights only — cheap enough for phones)
   for (const [u, v, z, i] of [[12.5, 4.5, 2.2, 7], [3.0, 1.0, 2.2, 5], [9.0, 2.5, 5.6, 5]]) {
-    const L = new THREE.PointLight(0xffc285, 0, 14, 1.6); L.position.copy(toWorld(u, v, z)); night.group.add(L); night.lights.push([L, i]); }
+    const L = new THREE.PointLight(0xffc285, 0, 14, 1.6); L.position.copy(toWorld(u, v, z)); scene.add(L); night.lights.push([L, i]); }   // always in the scene (intensity 0 by day): toggling light count recompiles every shader and froze the night button on phones
 }
 const nightSkyTex = (() => { const c = document.createElement('canvas'); c.width = 4; c.height = 256; const g = c.getContext('2d'); const gr = g.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, '#04070f'); gr.addColorStop(0.55, '#0c1a33'); gr.addColorStop(0.75, '#1d3352'); gr.addColorStop(1, '#0b1220'); g.fillStyle = gr; g.fillRect(0, 0, 4, 256); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.mapping = THREE.EquirectangularReflectionMapping; return t; })();
 const dayFog = scene.fog.color.clone();
@@ -716,7 +716,7 @@ function setNight(on) {
   for (const m of interiorMats) { m.emissive.setHex(on ? 0xffb066 : 0x000000); m.emissiveIntensity = on ? 0.22 : 0; }
   M.oak.emissive.setHex(on ? 0x6a4020 : 0); M.oak.emissiveIntensity = on ? 0.35 : 0;
   sky.visible = !on; scene.background = on ? nightSkyTex : null;
-  if (window.__waterMat) { window.__waterMat.color.setHex(on ? 0x0d1a24 : 0x2b5560); if (on) { window.__waterMat.envMap = null; window.__waterMat.needsUpdate = true; } }
+  if (window.__waterMat) { window.__waterMat.color.setHex(on ? 0x0d1a24 : 0x2b5560); window.__waterMat.envMapIntensity = on ? 0.04 : 0.55; }   // no envMap swap: it forced a shader recompile
   scene.fog.color.copy(on ? new THREE.Color(0x0a1424) : dayFog);
   if (on) {
     const d = new THREE.Vector3(-0.35, 0.8, 0.45).normalize(); const c = toWorld(8, 8, 0);
@@ -726,7 +726,8 @@ function setNight(on) {
   } else { hemi.color.setHex(0xe9eef2); hemi.groundColor.setHex(0x8a826f); scene.environmentIntensity = 0.85; setSun(+$('#sunMonth').value, +$('#sunTime').value); }
   $('#nightBtn').classList.toggle('on', on); $('#nightBtn').innerHTML = on ? '☀︎' : '☾'; $('#nightBtn').title = T[LANG][on ? 'day' : 'night'];
 }
-$('#nightBtn').onclick = () => setNight(!night.on);
+let nightBusy = false;
+$('#nightBtn').onclick = () => { if (nightBusy) return; nightBusy = true; const want = !night.on; $('#nightBtn').classList.toggle('on', want); requestAnimationFrame(() => { setNight(want); setTimeout(() => { nightBusy = false; }, 400); }); };
 
 interiorMats.push(M.interior, M.ceiling);
 
@@ -1032,7 +1033,9 @@ function loop() {
   if (composer) composer.render(dt); else renderer.render(scene, camera);
   requestAnimationFrame(loop);
 }
-mgr.onLoad = () => { $('#loader').style.opacity = 0; setTimeout(() => $('#loader').remove(), 900); };
+mgr.onLoad = () => { $('#loader').style.opacity = 0; setTimeout(() => $('#loader').remove(), 900);
+  // pre-compile the night-only shaders in the background so the first tap on ☾ switches at once
+  setTimeout(() => { if (night.on) return; night.group.visible = night.hg.visible = true; const p = renderer.compileAsync ? renderer.compileAsync(scene, camera) : Promise.resolve(renderer.compile(scene, camera)); night.group.visible = night.hg.visible = night.on; p.catch(() => {}); }, 2500); };
 applyLang(LANG);
 loop();
 window.__app = { blocked: (u, v, l) => blocked(u, v, l), floorAt: (u, v, l) => floorAt(u, v, l), collide, setNight, tourAt: t => { flyAnim = null; if (!touring) startTour(); tourT = t; stepTour(0.0001); }, stopFly: () => { flyAnim = null; }, view: (p, l) => { flyAnim = null; camera.position.copy(toWorld(...p)); controls.target.copy(toWorld(...l)); camera.lookAt(controls.target); }, camera, scene, setMode, startTour, toWorld, walker, placeWalker, setCut, setSun, controls, renderer };
