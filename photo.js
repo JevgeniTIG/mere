@@ -8,12 +8,16 @@ const CAP = {
   en: (h) => `The plot today · drone photo 13 Nov 2026 · altitude ${h} m`,
   ru: (h) => `Участок сегодня · фото с дрона 13.11.2026 · высота ${h} м`,
 };
-const RN = [   // photoreal visualisations (ChatGPT, from frames of the 3D model)
+const RN = [   // photoreal visualisations (ChatGPT, from frames of the 3D model, one consistent "house bible")
   ['01_tanav', 'Peafassaad tänavalt', 'Main facade from the street', 'Главный фасад с улицы'],
   ['02_ohust', 'Maja ja meri linnulennult', 'The house and the sea from above', 'Дом и море с высоты'],
   ['03_terrass', 'Aiaterrass ja saunatsoon', 'Garden terrace and the sauna lounge', 'Терраса и зона сауны'],
-  ['04_elutuba', 'Elutuba kaminaga', 'Living room with fireplace', 'Гостиная с камином'],
+  ['04_elutuba', 'Elutuba kaminaga, taga köök', 'Living room with fireplace, kitchen behind', 'Гостиная с камином, за ней кухня'],
   ['05_kook', 'Köök ja söögituba merevaatega', 'Kitchen and dining with a sea view', 'Кухня-столовая с видом на море'],
+  ['06_master', 'Magamistuba rõdu ja merevaatega', 'Master bedroom with balcony and sea view', 'Спальня с балконом и видом на море'],
+  ['07_saunatsoon', 'Saunatsoon ja saun', 'Sauna lounge and sauna', 'Зона отдыха и сауна'],
+  ['08_vannituba', 'Vannituba', 'Bathroom', 'Ванная комната'],
+  ['09_ohtu', 'Peafassaad õhtul', 'Main facade in the evening', 'Главный фасад вечером'],
 ];
 const NOTE = { et: 'illustreeriv visualiseering', en: 'illustrative visualisation', ru: 'иллюстративная визуализация' };
 const SETS = { et: ['Visualiseeringud', 'Krunt täna'], en: ['Visualisations', 'The plot today'], ru: ['Визуализации', 'Участок сегодня'] };
