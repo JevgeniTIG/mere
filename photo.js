@@ -8,16 +8,13 @@ const CAP = {
   en: (h) => `The plot today · drone photo 13 Nov 2026 · altitude ${h} m`,
   ru: (h) => `Участок сегодня · фото с дрона 13.11.2026 · высота ${h} м`,
 };
-const RN = [
-  ['terrace', 'Terrass õhtupäikeses', 'Terrace in the evening sun', 'Терраса в вечернем солнце'],
-  ['entry', 'Peafassaad ja sissepääs', 'Main facade and entrance', 'Главный фасад и вход'],
-  ['aerial', 'Maja ja meri linnulennult', 'The house and the sea from above', 'Дом и море с высоты'],
-  ['balcony', 'Vaade magamistoast rõdule ja merele', 'From the master bedroom to the balcony and the sea', 'Из спальни на балкон и море'],
-  ['livB', 'Elutuba', 'Living room', 'Гостиная'],
-  ['kitchen', 'Köök ja söögituba', 'Kitchen and dining', 'Кухня-столовая'],
-  ['master', 'Master-magamistuba', 'Master bedroom', 'Главная спальня'],
+const RN = [   // photoreal visualisations (ChatGPT, from frames of the 3D model)
+  ['01_tanav', 'Peafassaad tänavalt', 'Main facade from the street', 'Главный фасад с улицы'],
+  ['02_ohust', 'Maja ja meri linnulennult', 'The house and the sea from above', 'Дом и море с высоты'],
+  ['03_terrass', 'Aiaterrass', 'Garden terrace', 'Терраса в сад'],
+  ['04_elutuba', 'Elutuba kaminaga', 'Living room with fireplace', 'Гостиная с камином'],
 ];
-const NOTE = { et: 'visualiseering · sisekujundus illustratiivne', en: 'visualisation · interior is illustrative', ru: 'визуализация · интерьер иллюстративный' };
+const NOTE = { et: 'illustreeriv visualiseering', en: 'illustrative visualisation', ru: 'иллюстративная визуализация' };
 const SETS = { et: ['Visualiseeringud', 'Krunt täna'], en: ['Visualisations', 'The plot today'], ru: ['Визуализации', 'Участок сегодня'] };
 const LI = { et: 1, en: 2, ru: 3 };
 export function initPhotos({ LANG }) {
@@ -34,9 +31,9 @@ export function initPhotos({ LANG }) {
   stage.append(prev, next, cnt);
   // two sets: renders (default) and drone photos
   const sets = document.createElement('div'); sets.className = 'ph-sets'; stage.append(sets);
-  const SHOW_RENDERS = false;   // renders hidden for now — flip to true to bring the 'Visualiseeringud' set back
-  let set = SHOW_RENDERS ? 0 : 1, cur = 0; if (!SHOW_RENDERS) sets.style.display = 'none';
-  const items = () => set === 0 ? RN.map(r => ({ src: `assets/renders/${r[0]}.jpg`, th: `assets/renders/t_${r[0]}.jpg`, cap: `${r[LI[LANG()]]} · ${NOTE[LANG()]}` }))
+  // the two sets are separate tabs now (Galerii = drone photos, Visualiseerimine = renders): no switcher inside
+  let set = 1, cur = 0; sets.style.display = 'none';
+  const items = () => set === 0 ? RN.map(r => ({ src: `assets/viz/${r[0]}.jpg`, th: `assets/viz/t_${r[0]}.jpg`, cap: `${r[LI[LANG()]]} · ${NOTE[LANG()]}` }))
                                 : PH.map(([n, h]) => ({ src: `assets/photos/${n}.jpg`, th: `assets/photos/t_${n}.jpg`, cap: CAP[LANG()](h) }));
   const build = () => {
     sets.innerHTML = SETS[LANG()].map((t, k) => `<button class="${k === set ? 'on' : ''}" data-k="${k}">${t}</button>`).join('');
@@ -56,5 +53,6 @@ export function initPhotos({ LANG }) {
   addEventListener('keydown', e => { if (view.classList.contains('hidden')) return; if (e.key === 'ArrowRight') show(cur + 1); if (e.key === 'ArrowLeft') show(cur - 1); });
   build(); show(0);
   window.__galleryLang = () => { build(); show(cur); };
+  window.__gallerySet = k => { if (k === set) return; set = k; build(); show(0); };
   return true;
 }

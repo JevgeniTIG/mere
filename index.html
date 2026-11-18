@@ -78,8 +78,8 @@
   el.querySelectorAll('.ld-langs button').forEach(b => b.onclick = () => setL(b.dataset.l));
   const go = m => { el.classList.add('gone'); document.body.classList.remove('on-landing'); document.title = 'MERE 44 — ' + L[lang].h;
     if (window.__setMode) window.__setMode(m); else window.__pendingMode = m; };
-  $('#ldToday').onclick = () => go('photo');
-  $('#ldBuild').onclick = () => go('tour');
+  $('#ldToday').onclick = () => { document.body.dataset.sec = 'plot'; go('photo'); };
+  $('#ldBuild').onclick = () => { document.body.dataset.sec = 'build'; go('tour'); };
   window.__showLanding = () => { el.classList.remove('gone'); document.body.classList.add('on-landing'); document.title = L[lang].title; };
   document.body.classList.add('on-landing');
   setL(lang, true); if (lang !== 'et') window.__pendingLang = lang;
@@ -95,7 +95,8 @@
     <button data-mode="aerial" data-i18n="m_aerial">Linnulennult</button>
     <button data-mode="walk" data-i18n="m_walk">Jaluta</button>
     <button data-mode="plan" data-i18n="m_plan">Korruseplaanid</button>
-    <button data-mode="photo" data-i18n="m_photo">Krunt täna</button>
+    <button data-mode="photo" data-i18n="m_photo">Galerii</button>
+    <button data-mode="viz" data-i18n="m_viz">Visualiseerimine</button>
   </nav>
   <button id="nightBtn" class="nightbtn" title="Öö">☾</button>
   <div id="langs"><button data-lang="et" class="on">ET</button><button data-lang="en">EN</button><button data-lang="ru">RU</button></div>

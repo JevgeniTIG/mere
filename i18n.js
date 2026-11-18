@@ -1,6 +1,6 @@
 export const T = {
   et: {
-    m_tour:'Ülevaade', m_aerial:'Linnulennult', m_walk:'Jaluta', m_plan:'Korruseplaanid', m_photo:'Galerii',
+    m_tour:'Ülevaade', m_aerial:'Linnulennult', m_walk:'Jaluta', m_plan:'Korruseplaanid', m_photo:'Galerii', m_viz:'Visualiseerimine',
     eyebrow:'Tammneeme · Viimsi vald · Eesti', h1:'Kaasaegne kodu<br>mere ääres',
     lead:'Kahekorruseline CLT-puitkarkassiga eramu suurte klaaspindadega. Meri on kohe üle tee.',
     f_net:'köetav pind', f_rooms:'eluruumi', f_energy:'energiaklass', f_plot:'krunt',
@@ -28,7 +28,7 @@ export const T = {
     ],
   },
   en: {
-    m_tour:'Overview', m_aerial:'Aerial', m_walk:'Walk', m_plan:'Floor plans', m_photo:'Gallery',
+    m_tour:'Overview', m_aerial:'Aerial', m_walk:'Walk', m_plan:'Floor plans', m_photo:'Gallery', m_viz:'Visualisations',
     eyebrow:'Tammneeme · Viimsi · Estonia', h1:'A modern home<br>by the sea',
     lead:'A two-storey CLT timber house with large glazing. The sea is just across the road.',
     f_net:'heated area', f_rooms:'rooms', f_energy:'energy class', f_plot:'plot',
@@ -56,7 +56,7 @@ export const T = {
     ],
   },
   ru: {
-    m_tour:'Обзор', m_aerial:'С высоты', m_walk:'Прогулка', m_plan:'Планы этажей', m_photo:'Галерея',
+    m_tour:'Обзор', m_aerial:'С высоты', m_walk:'Прогулка', m_plan:'Планы этажей', m_photo:'Галерея', m_viz:'Визуализации',
     eyebrow:'Таммнеэме · волость Виймси · Эстония', h1:'Современный дом<br>у моря',
     lead:'Двухэтажный дом из CLT-панелей с большим остеклением. Море — сразу через дорогу.',
     f_net:'отапливаемая площадь', f_rooms:'жилых комнат', f_energy:'класс энергоэфф.', f_plot:'участок',

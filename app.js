@@ -761,7 +761,7 @@ function setMode(m) {
   $('#walkhud').classList.toggle('hidden', m !== 'walk'); $('#minimap').classList.toggle('hidden', m !== 'walk'); if (m === 'walk') miniFloor = 0;
   $('#joy').classList.toggle('hidden', !(m === 'walk' && matchMedia('(pointer:coarse)').matches));
   $('#planview').classList.toggle('hidden', m !== 'plan');
-  $('#photoview').classList.toggle('hidden', m !== 'photo');
+  $('#photoview').classList.toggle('hidden', m !== 'photo' && m !== 'viz');
   if (m !== 'aerial') $('#panel').classList.add('hidden');
   controls.enabled = m === 'aerial' || m === 'tour';
   if (m !== 'tour') stopTour();
@@ -770,7 +770,7 @@ function setMode(m) {
   if (m === 'walk') { setCut(0); if (!walker.placed) placeWalker(11.5, -6.5, -0.02, 1, 270); }
   camera.fov = m === 'walk' ? 66 : 50; camera.updateProjectionMatrix();
   if (m === 'plan') buildPlan(planFloor);
-  if (m === 'photo') openPhotos(); else $('#phimg') && null;
+  if (m === 'photo' || m === 'viz') openPhotos().then(() => window.__gallerySet && window.__gallerySet(m === 'viz' ? 0 : 1));
 }
 $$('#modes button').forEach(b => b.onclick = () => setMode(b.dataset.mode));
 $('#skip').onclick = () => setMode('aerial');
