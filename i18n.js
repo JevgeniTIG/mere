@@ -13,7 +13,7 @@ export const T = {
     t_view:'Vaade', cut0:'Terve', cut1:'Ilma katuseta', cut2:'1. korrus', t_floor:'Korrus', t_sun:'Päike', info:'Andmed',
     mar:'märts', jun:'juuni', sep:'september', dec:'detsember',
     walkhint:'Lohista vaatamiseks · WASD / nooled liikumiseks · klõpsa plaanil, et sinna minna',
-    floor1:'1. korrus', floor2:'2. korrus', planhint:'Klõpsa ruumil — astud sisse · keri või näpista suumimiseks', total:'Kokku', night:'Öö', day:'Päev',
+    floor1:'1. korrus', floor2:'2. korrus', planhint:'Klõpsa ruumil, et sinna sisse astuda · suurendamiseks kasuta nuppe + ja −', total:'Kokku', night:'Öö', day:'Päev',
     before_after:'enne / pärast', phnote:'Uus hoone on paigutatud foto kaamera asukoha, kõrguse ja suuna järgi.',
     outside:'Õu', balcony:'Rõdu', terrace:'Terrass',
     cap:[
@@ -41,7 +41,7 @@ export const T = {
     t_view:'View', cut0:'Full', cut1:'Roof off', cut2:'Ground floor', t_floor:'Floor', t_sun:'Sun', info:'Details',
     mar:'March', jun:'June', sep:'September', dec:'December',
     walkhint:'Drag to look · WASD / arrows to move · click the mini-plan to jump there',
-    floor1:'Ground floor', floor2:'First floor', planhint:'Click a room to step inside · scroll or pinch to zoom', total:'Total', night:'Night', day:'Day',
+    floor1:'Ground floor', floor2:'First floor', planhint:'Click a room to step inside · use + and − to zoom', total:'Total', night:'Night', day:'Day',
     before_after:'before / after', phnote:'The new house is placed using the photo camera position, altitude and heading.',
     outside:'Garden', balcony:'Balcony', terrace:'Terrace',
     cap:[
@@ -69,7 +69,7 @@ export const T = {
     t_view:'Вид', cut0:'Целиком', cut1:'Без крыши', cut2:'1-й этаж', t_floor:'Этаж', t_sun:'Солнце', info:'Данные',
     mar:'март', jun:'июнь', sep:'сентябрь', dec:'декабрь',
     walkhint:'Тяните, чтобы осмотреться · WASD / стрелки — движение · нажмите на мини-план, чтобы перейти',
-    floor1:'1-й этаж', floor2:'2-й этаж', planhint:'Нажмите на комнату — окажетесь внутри · колесо или щипок — масштаб', total:'Итого', night:'Ночь', day:'День',
+    floor1:'1-й этаж', floor2:'2-й этаж', planhint:'Нажмите на комнату, чтобы войти в неё · масштаб — кнопками + и −', total:'Итого', night:'Ночь', day:'День',
     before_after:'до / после', phnote:'Новый дом вписан по положению, высоте и направлению камеры дрона.',
     outside:'Двор', balcony:'Балкон', terrace:'Терраса',
     cap:[

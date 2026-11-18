@@ -943,11 +943,12 @@ function planMarkup(fl, mini) {
 function buildPlan(fl) {
   planFloor = fl; $$('.tabs button').forEach(b => b.classList.toggle('on', +b.dataset.pf === fl));
   const svg = $('#plansvg');
-  const minU = -1.6, maxU = 19.4, minV = -1.6, maxV = 14.6;   // framed tight on the house (≈2× the old plot-wide view)
+  const PH_ = matchMedia('(max-width:820px)').matches;   // phones: frame the house edge to edge (≈2× larger)
+  const minU = PH_ ? -0.6 : -1.6, maxU = PH_ ? 17.2 : 19.4, minV = PH_ ? -0.6 : -1.6, maxV = PH_ ? 14.4 : 14.6;   // framed tight on the house (≈2× the old plot-wide view)
   let { h, list } = planMarkup(fl, false);
   // north arrow (true north in local frame)
   const nr = model.frame.rot; const na = [Math.sin(nr), Math.cos(nr)];
-  h += `<g transform="translate(${maxU - 0.95},${-maxV + 1.0})"><circle r="0.9" fill="none" stroke="#222" stroke-width="0.04"/><line x1="0" y1="0" x2="${na[0] * 0.8}" y2="${-na[1] * 0.8}" stroke="#222" stroke-width="0.12"/><text x="${na[0] * 1.35}" y="${-na[1] * 1.35 + 0.17}" font-size="0.5" text-anchor="middle">N</text></g>`;
+  if (!PH_) h += `<g transform="translate(${maxU - 0.95},${-maxV + 1.0})"><circle r="0.9" fill="none" stroke="#222" stroke-width="0.04"/><line x1="0" y1="0" x2="${na[0] * 0.8}" y2="${-na[1] * 0.8}" stroke="#222" stroke-width="0.12"/><text x="${na[0] * 1.35}" y="${-na[1] * 1.35 + 0.17}" font-size="0.5" text-anchor="middle">N</text></g>`;
   h += `<text x="${minU + 0.4}" y="${-minV - 0.4}" font-size="0.34" fill="#8a837b">0 — 5 m</text><line x1="${minU + 0.4}" y1="${-minV - 0.9}" x2="${minU + 5.4}" y2="${-minV - 0.9}" stroke="#222" stroke-width="0.08"/>`;
   svg.innerHTML = h;
   planVB = { x: minU, y: -maxV, w: maxU - minU, h: maxV - minV }; planVB0 = { ...planVB }; applyVB();
