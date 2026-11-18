@@ -171,8 +171,11 @@ for (const f of model.faces) {
       const mc = cv(), mx = mc.getContext('2d'); mx.drawImage(img, 0, 0); const md = mx.getImageData(0, 0, W, H);
       const zCeil = f.floor === 1 ? 2.985 : 6.48, N = W * H;
       const inWin = new Uint8Array(N), glass = new Uint8Array(N);
-      for (const [a, b, za, zb] of f.wins) {
-        const x0 = Math.max(0, Math.floor(a * sx)), x1 = Math.min(W, Math.ceil(b * sx)), y0 = Math.max(0, Math.floor((f.z1 - zb) * sz)), y1 = Math.min(H, Math.ceil((f.z1 - za) * sz));
+      const zFl = f.floor === 1 ? 0 : 3.5;
+      for (let [a, b, za, zb] of f.wins) {
+        if (za < zFl + 0.06) za = f.z0;   // door / floor-to-ceiling glass: cut right down, no plaster lip on the floor
+        if (zb > zCeil - 0.06) zb = f.z1;
+        const x0 = Math.max(0, Math.ceil(a * sx)), x1 = Math.min(W, Math.floor(b * sx)), y0 = Math.max(0, Math.ceil((f.z1 - zb) * sz)), y1 = Math.min(H, Math.floor((f.z1 - za) * sz));   // stay inside the opening: the reveal closes the edge, no see-through hairline
         for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) inWin[y * W + x] = 1;
       }
       for (let i = 0; i < N; i++) glass[i] = inWin[i] && gd[i * 4 + 1] > 127 ? 1 : 0;
@@ -261,7 +264,7 @@ for (const f of model.faces) {
       if (z1 < zc - 0.03) gs.push(quad(P(...A0, z1), P(...B0, z1), P(...B1, z1), P(...A1, z1), new THREE.Vector3(0, -1, 0)));
       if (z0 > zf + 0.05) gs.push(quad(P(...A0, z0), P(...B0, z0), P(...B1, z0), P(...A1, z0), new THREE.Vector3(0, 1, 0)));
       else thr[f.floor === 1 ? 1 : 2].push(quad(P(...A0, zf + 0.012), P(...B0, zf + 0.012), P(...B1, zf + 0.012), P(...A1, zf + 0.012), new THREE.Vector3(0, 1, 0))); } }   // door threshold: floor runs out to the glass
-  for (const k of [1, 2]) if (thr[k].length) { const m = new THREE.Mesh(mergeGeometries(thr[k]), M.oak); m.receiveShadow = true; groups[k === 1 ? 'ground' : 'up'].add(m); }
+  for (const k of [1, 2]) if (thr[k].length) { const tm = M.oak.clone(); tm.side = THREE.DoubleSide; tm.polygonOffset = true; tm.polygonOffsetFactor = -2; const m = new THREE.Mesh(mergeGeometries(thr[k]), tm); m.receiveShadow = true; groups[k === 1 ? 'ground' : 'up'].add(m); }
   if (gs.length) { const rm = new THREE.MeshStandardMaterial({ color: 0xf3f0eb, roughness: 0.9, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2 }); interiorMats.push(rm);   // same plaster as the inner skin, drawn on top: corner jambs that share a plane with the next wall no longer flicker
     const m = new THREE.Mesh(mergeGeometries(gs), rm); m.castShadow = m.receiveShadow = true; groups.ground.add(m); }
 }
