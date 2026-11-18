@@ -710,6 +710,8 @@ night.hg = new THREE.Group(); house.add(night.hg); night.hg.visible = false;
       while (acc < L) { const u = a + tu * acc - tv * off, v = b + tv * acc + tu * off; if (!inPoly([u, v], EF1) && !nearHouse(u, v) && !nearFence(u, v) && Math.hypot(u - 7.2, v - 12.6) > 3.0 && !pts.some(p => Math.hypot(p[0] - u, p[1] - v) < 3.2)) pts.push([u, v]); acc += step; } acc -= L; } };
   model.band.forEach(p => walk(p, 5.0, -0.25));
   model.paving.forEach(p => walk(p, 5.5, -0.25));
+  // carport slat screens (v 13.86 / 19.36, u 16.65–20.9): a lamp on the screen line moves inside the carport
+  for (const p of pts) if (p[0] > 16.4 && p[0] < 21.2) for (const sv of [13.86, 19.36]) if (Math.abs(p[1] - sv) < 0.8) p[1] = sv + (sv > 16 ? -0.75 : 0.75);
   window.__bollards = pts.slice(0, 18); for (const [u, v] of pts.slice(0, 18)) {
     night.hg.add(box(u - 0.07, v - 0.07, u + 0.07, v + 0.07, -0.3, 0.42, postM));
     night.hg.add(box(u - 0.075, v - 0.075, u + 0.075, v + 0.075, 0.3, 0.38, lensM));
