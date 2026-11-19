@@ -709,7 +709,9 @@ night.hg = new THREE.Group(); house.add(night.hg); night.hg.visible = false;
   const walk = (poly, step, off) => { let acc = step / 2; for (let i = 0; i < poly.length; i++) { const [a, b] = poly[i], [c, d] = poly[(i + 1) % poly.length]; const L = Math.hypot(c - a, d - b); if (L < 1.2) { acc += L; continue; } const tu = (c - a) / L, tv = (d - b) / L;
       while (acc < L) { const u = a + tu * acc - tv * off, v = b + tv * acc + tu * off; if (!inPoly([u, v], EF1) && !nearHouse(u, v) && !nearFence(u, v) && Math.hypot(u - 7.2, v - 12.6) > 3.0 && !pts.some(p => Math.hypot(p[0] - u, p[1] - v) < 3.2)) pts.push([u, v]); acc += step; } acc -= L; } };
   model.band.forEach(p => walk(p, 5.0, -0.25));
-  model.paving.forEach(p => walk(p, 5.5, -0.25));
+  // two lamps flanking the driveway near the street gate, on the grass ~13 cm off the paver edge
+  pts.push([0.85, 23.3], [9.45, 23.3]);
+  model.paving.forEach(p => walk(p, 5.5, 0.2));   // on the lawn, ~13 cm from the paver edge (post is 14 cm wide)
   // carport slat screens (v 13.86 / 19.36, u 16.65–20.9): a lamp on the screen line moves inside the carport
   for (const p of pts) if (p[0] > 16.4 && p[0] < 21.2) for (const sv of [13.86, 19.36]) if (Math.abs(p[1] - sv) < 0.8) p[1] = sv + (sv > 16 ? -0.75 : 0.75);
   window.__bollards = pts.slice(0, 18); for (const [u, v] of pts.slice(0, 18)) {
