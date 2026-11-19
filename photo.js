@@ -8,7 +8,7 @@ const CAP = {
   en: (h) => `The plot today · drone photo 13 Nov 2026 · altitude ${h} m`,
   ru: (h) => `Участок сегодня · фото с дрона 13.11.2026 · высота ${h} м`,
 };
-const RN = [   // photoreal visualisations (ChatGPT, from frames of the 3D model, one consistent "house bible")
+const RN = [   // visualisations
   ['01_tanav', 'Peafassaad tänavalt', 'Main facade from the street', 'Главный фасад с улицы'],
   ['02_ohust', 'Maja ja meri linnulennult', 'The house and the sea from above', 'Дом и море с высоты'],
   ['03_terrass', 'Aiaterrass ja saunatsoon', 'Garden terrace and the sauna lounge', 'Терраса и зона сауны'],
