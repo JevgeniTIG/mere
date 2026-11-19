@@ -207,6 +207,9 @@ button{touch-action:manipulation}
 .ld-btn1 i{font-style:normal;transition:transform .2s}.ld-btn1:hover i{transform:translateX(3px)}
 .ld-btn2{border:1px solid rgba(255,255,255,.45);color:#fff;background:rgba(255,255,255,.06);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}.ld-btn2:hover{background:rgba(255,255,255,.16)}
 .ld-contact{font-size:13px;color:rgba(255,255,255,.7)}.ld-contact b{color:#fff;font-weight:500}.ld-contact a{color:#fff}
+.ld-credit{position:absolute;right:26px;bottom:18px;font-size:12px;letter-spacing:.04em;color:rgba(255,255,255,.62);text-decoration:none;padding:6px 0;transition:color .2s}
+.ld-credit b{font-weight:600;color:rgba(255,255,255,.9)}.ld-credit i{font-style:normal;color:#e8372b}
+.ld-credit:hover{color:#fff}.ld-credit:hover b{color:#fff}
 body.on-landing #loader{visibility:hidden}
 header#top .brand-sm{cursor:pointer}
 @media (max-width:820px){
@@ -215,6 +218,7 @@ header#top .brand-sm{cursor:pointer}
   .ld-top{padding:12px 14px}.ld-in{padding:2vh 22px 5vh}
   .ld-cta{flex-direction:column;align-items:stretch}.ld-btn{justify-content:center}
   .ld-facts{gap:10px 18px}
+  .ld-credit{position:relative;right:auto;bottom:auto;align-self:flex-start;margin:0 22px 18px}
 }
 
 /* two sections from the landing page: the plot (photos + visualisations) / what can be built (3D) */
