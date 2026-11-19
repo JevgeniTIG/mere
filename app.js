@@ -712,8 +712,6 @@ night.hg = new THREE.Group(); house.add(night.hg); night.hg.visible = false;
   // two lamps flanking the driveway near the street gate, on the grass ~13 cm off the paver edge
   pts.push([0.85, 23.3], [9.45, 23.3]);
   model.paving.forEach(p => walk(p, 5.5, 0.2));   // on the lawn, ~13 cm from the paver edge (post is 14 cm wide)
-  // carport slat screens (v 13.86 / 19.36, u 16.65–20.9): a lamp on the screen line moves inside the carport
-  for (const p of pts) if (p[0] > 16.4 && p[0] < 21.2) for (const sv of [13.86, 19.36]) if (Math.abs(p[1] - sv) < 0.8) p[1] = sv + (sv > 16 ? -0.75 : 0.75);
   window.__bollards = pts.slice(0, 18); for (const [u, v] of pts.slice(0, 18)) {
     night.hg.add(box(u - 0.07, v - 0.07, u + 0.07, v + 0.07, -0.3, 0.42, postM));
     night.hg.add(box(u - 0.075, v - 0.075, u + 0.075, v + 0.075, 0.3, 0.38, lensM));
